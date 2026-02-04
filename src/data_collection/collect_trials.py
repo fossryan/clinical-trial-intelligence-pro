@@ -1,69 +1,161 @@
 """
-Clinical Trials Data Collector
-Fetches data from ClinicalTrials.gov API v2
+Enhanced Clinical Trials Collector - 10,000+ Trials
+Comprehensive collection strategy for maximum coverage and quality
+
+Run time: 60-90 minutes (API rate limiting)
+Output: 10,000+ clinical trials from ClinicalTrials.gov
 """
 
 import requests
 import pandas as pd
 import time
-import json
 from typing import List, Dict, Optional
 from datetime import datetime
 from pathlib import Path
-import sys
 
 
-class ClinicalTrialsCollector:
-    """Collect clinical trial data from ClinicalTrials.gov API"""
+class EnhancedTrialCollector:
+    """Collect 10,000+ trials using multi-phase strategy"""
     
     BASE_URL = "https://clinicaltrials.gov/api/v2/studies"
     
-    def __init__(self, rate_limit: float = 1.0):
+    def __init__(self, rate_limit: float = 0.5):
         self.rate_limit = rate_limit
         self.session = requests.Session()
+    
+    def collect_comprehensive_dataset(self, target_total: int = 10000) -> pd.DataFrame:
+        """
+        Comprehensive collection strategy:
+        - All phases (1, 2, 3, 4, combined)
+        - Multiple statuses (completed, terminated, recruiting, active)
+        - Recent trials (2010-2025)
+        - Better sponsor diversity
+        """
         
-    def fetch_trials(
+        all_trials = []
+        
+        # Multi-batch strategy for comprehensive coverage
+        batches = [
+            {
+                'name': 'Phase 2-3 Completed/Terminated (Core Dataset)',
+                'phases': ['PHASE2', 'PHASE3'],
+                'statuses': ['COMPLETED', 'TERMINATED'],
+                'years': '2010-01-01',
+                'target': 3500
+            },
+            {
+                'name': 'Phase 2-3 Active/Recruiting',
+                'phases': ['PHASE2', 'PHASE3'],
+                'statuses': ['RECRUITING', 'ACTIVE_NOT_RECRUITING', 'ENROLLING_BY_INVITATION'],
+                'years': '2015-01-01',
+                'target': 2000
+            },
+            {
+                'name': 'Phase 1 All Statuses',
+                'phases': ['PHASE1'],
+                'statuses': ['COMPLETED', 'TERMINATED', 'RECRUITING', 'ACTIVE_NOT_RECRUITING'],
+                'years': '2015-01-01',
+                'target': 2000
+            },
+            {
+                'name': 'Phase 4 Post-Marketing',
+                'phases': ['PHASE4'],
+                'statuses': ['COMPLETED', 'TERMINATED', 'RECRUITING'],
+                'years': '2015-01-01',
+                'target': 1500
+            },
+            {
+                'name': 'Combined Phases (1/2, 2/3)',
+                'phases': ['PHASE1|PHASE2', 'PHASE2|PHASE3'],
+                'statuses': ['COMPLETED', 'TERMINATED', 'RECRUITING'],
+                'years': '2015-01-01',
+                'target': 1000
+            }
+        ]
+        
+        print(f"\n{'='*80}")
+        print(f"COMPREHENSIVE TRIAL COLLECTION - TARGET: {target_total:,} TRIALS")
+        print(f"{'='*80}\n")
+        
+        for i, batch in enumerate(batches, 1):
+            print(f"\n[Batch {i}/{len(batches)}] {batch['name']}")
+            print(f"Target: {batch['target']:,} trials")
+            print("-" * 80)
+            
+            trials = self._fetch_batch(
+                phases=batch['phases'],
+                statuses=batch['statuses'],
+                start_year=batch['years'],
+                max_studies=batch['target']
+            )
+            
+            all_trials.extend(trials)
+            print(f"✓ Collected: {len(trials):,} trials")
+            print(f"✓ Running total: {len(all_trials):,} trials")
+            
+            # Be nice to the API
+            time.sleep(2)
+            
+            # Stop if we hit target
+            if len(all_trials) >= target_total:
+                print(f"\n✓ Target of {target_total:,} trials reached!")
+                break
+        
+        # Parse and clean
+        print(f"\n{'='*80}")
+        print("PROCESSING DATA...")
+        print(f"{'='*80}\n")
+        
+        df = self._parse_studies(all_trials)
+        
+        # Remove duplicates
+        original = len(df)
+        df = df.drop_duplicates(subset=['nct_id'], keep='first')
+        removed = original - len(df)
+        
+        print(f"✓ Parsed {original:,} trials")
+        print(f"✓ Removed {removed:,} duplicates")
+        print(f"✓ Final unique trials: {len(df):,}")
+        
+        return df
+    
+    def _fetch_batch(
         self,
-        phases: Optional[List[str]] = None,
-        statuses: Optional[List[str]] = None,
-        max_studies: int = 2000,
-        study_type: str = "INTERVENTIONAL"
-    ) -> pd.DataFrame:
-        """
-        Fetch clinical trials from API
-        
-        Args:
-            phases: ['PHASE1', 'PHASE2', 'PHASE3', 'PHASE4']
-            statuses: ['COMPLETED', 'TERMINATED', 'RECRUITING', 'ACTIVE_NOT_RECRUITING']
-            max_studies: Maximum number of studies to fetch
-            study_type: Usually 'INTERVENTIONAL' for drug trials
-        """
+        phases: List[str],
+        statuses: List[str],
+        start_year: str,
+        max_studies: int
+    ) -> List[Dict]:
+        """Fetch one batch of trials"""
         
         all_studies = []
         next_page_token = None
         fetched = 0
-        
-        print(f"Fetching up to {max_studies} clinical trials...")
+        page = 1
         
         while fetched < max_studies:
+            # Build query
+            query_parts = []
+            
+            # Interventional studies only
+            query_parts.append('AREA[StudyType]INTERVENTIONAL')
+            
+            # Phases
+            phase_query = ' OR '.join([f'AREA[Phase]{p}' for p in phases])
+            query_parts.append(f'({phase_query})')
+            
+            # Statuses
+            status_query = ' OR '.join([f'AREA[OverallStatus]{s}' for s in statuses])
+            query_parts.append(f'({status_query})')
+            
+            # Date range
+            query_parts.append(f'AREA[StartDate]RANGE[{start_year},MAX]')
+            
             params = {
+                'query.term': ' AND '.join(query_parts),
                 'pageSize': min(100, max_studies - fetched),
                 'format': 'json'
             }
-            
-            # Build query filters
-            query_parts = []
-            if study_type:
-                query_parts.append(f'AREA[StudyType]{study_type}')
-            if phases:
-                phase_query = ' OR '.join([f'AREA[Phase]{p}' for p in phases])
-                query_parts.append(f'({phase_query})')
-            if statuses:
-                status_query = ' OR '.join([f'AREA[OverallStatus]{s}' for s in statuses])
-                query_parts.append(f'({status_query})')
-            
-            if query_parts:
-                params['query.term'] = ' AND '.join(query_parts)
             
             if next_page_token:
                 params['pageToken'] = next_page_token
@@ -75,12 +167,13 @@ class ClinicalTrialsCollector:
                 
                 studies = data.get('studies', [])
                 if not studies:
-                    print("No more studies found.")
                     break
                 
                 all_studies.extend(studies)
                 fetched += len(studies)
-                print(f"Fetched {fetched}/{max_studies} studies...")
+                
+                print(f"  Page {page}: {len(studies)} trials (total: {fetched:,}/{max_studies:,})")
+                page += 1
                 
                 next_page_token = data.get('nextPageToken')
                 if not next_page_token:
@@ -89,53 +182,34 @@ class ClinicalTrialsCollector:
                 time.sleep(self.rate_limit)
                 
             except Exception as e:
-                print(f"Error fetching data: {e}")
+                print(f"  ⚠ Error: {e}")
                 break
         
-        print(f"Total studies collected: {len(all_studies)}")
-        
-        # Parse into structured data
-        df = self._parse_studies(all_studies)
-        return df
+        return all_studies
     
     def _parse_studies(self, studies: List[Dict]) -> pd.DataFrame:
-        """Parse raw JSON studies into structured DataFrame"""
+        """Parse JSON studies into DataFrame"""
         
         records = []
+        errors = 0
         
         for study in studies:
             try:
                 protocol = study.get('protocolSection', {})
                 
-                # Identification
+                # Modules
                 ident = protocol.get('identificationModule', {})
-                
-                # Status
                 status = protocol.get('statusModule', {})
-                
-                # Design
                 design = protocol.get('designModule', {})
-                
-                # Arms/Interventions
                 arms = protocol.get('armsInterventionsModule', {})
-                
-                # Outcomes
                 outcomes = protocol.get('outcomesModule', {})
-                
-                # Eligibility
                 eligibility = protocol.get('eligibilityModule', {})
-                
-                # Sponsor
                 sponsor = protocol.get('sponsorCollaboratorsModule', {})
-                
-                # Locations
                 locations = protocol.get('contactsLocationsModule', {})
-                
-                # Conditions
                 conditions_mod = protocol.get('conditionsModule', {})
                 
                 record = {
-                    # Identifiers
+                    # Identity
                     'nct_id': ident.get('nctId'),
                     'brief_title': ident.get('briefTitle'),
                     'official_title': ident.get('officialTitle'),
@@ -146,7 +220,7 @@ class ClinicalTrialsCollector:
                     'completion_date': self._safe_date(status.get('completionDateStruct')),
                     'last_update': status.get('lastUpdatePostDateStruct', {}).get('date'),
                     
-                    # Study Design
+                    # Design
                     'study_type': design.get('studyType'),
                     'phase': '|'.join(design.get('phases', [])),
                     'enrollment': design.get('enrollmentInfo', {}).get('count'),
@@ -160,12 +234,8 @@ class ClinicalTrialsCollector:
                     'condition': '|'.join(conditions_mod.get('conditions', [])),
                     
                     # Interventions
-                    'intervention_name': '|'.join([
-                        i.get('name', '') for i in arms.get('interventions', [])
-                    ]),
-                    'intervention_type': '|'.join(list(set([
-                        i.get('type', '') for i in arms.get('interventions', [])
-                    ]))),
+                    'intervention_name': '|'.join([i.get('name', '') for i in arms.get('interventions', [])]),
+                    'intervention_type': '|'.join(list(set([i.get('type', '') for i in arms.get('interventions', [])]))),
                     
                     # Outcomes
                     'primary_outcome_count': len(outcomes.get('primaryOutcomes', [])),
@@ -192,54 +262,138 @@ class ClinicalTrialsCollector:
                 records.append(record)
                 
             except Exception as e:
-                print(f"Error parsing study: {e}")
+                errors += 1
                 continue
+        
+        if errors > 0:
+            print(f"  ⚠ {errors} parsing errors (non-critical)")
         
         return pd.DataFrame(records)
     
     def _safe_date(self, date_struct: Optional[Dict]) -> Optional[str]:
-        """Extract date safely from ClinicalTrials.gov date structure"""
+        """Extract date safely"""
         if not date_struct:
             return None
         return date_struct.get('date')
 
 
 def main():
-    """Main collection script for biotech-relevant trials"""
+    """
+    Main execution - Collect 10,000+ trials
     
-    collector = ClinicalTrialsCollector(rate_limit=0.5)
+    Estimated runtime: 60-90 minutes
+    """
     
-    # Focus on Phase 2 and 3 trials (most predictive of success/failure patterns)
-    # Get both completed (success) and terminated (failure) for modeling
-    print("\n=== Collecting Phase 2-3 Drug Development Trials ===\n")
+    print("\n" + "="*80)
+    print("ENHANCED CLINICAL TRIAL COLLECTION - 10,000+ TRIALS")
+    print("="*80)
+    print("\n📊 Collection Strategy:")
+    print("  • All phases: 1, 2, 3, 4, combined")
+    print("  • All statuses: completed, terminated, recruiting, active")
+    print("  • Date range: 2010-2025 (15 years)")
+    print("  • Study type: Interventional only")
+    print("\n⏱ Estimated time: 60-90 minutes")
+    print("💾 Output: data/raw/clinical_trials_raw_10k_YYYYMMDD_HHMMSS.csv")
+    print("="*80 + "\n")
     
-    df = collector.fetch_trials(
-        phases=['PHASE2', 'PHASE3'],
-        statuses=['COMPLETED', 'TERMINATED', 'ACTIVE_NOT_RECRUITING', 'WITHDRAWN'],
-        max_studies=2000,
-        study_type='INTERVENTIONAL'
-    )
+    # Confirm
+    response = input("Start collection? (yes/no): ").strip().lower()
+    if response not in ['yes', 'y']:
+        print("❌ Collection cancelled.")
+        return None
     
-    # Save data
+    start_time = datetime.now()
+    print(f"\n🚀 Starting collection at {start_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+    
+    # Collect
+    collector = EnhancedTrialCollector(rate_limit=0.5)
+    df = collector.collect_comprehensive_dataset(target_total=10000)
+    
+    # Save
     output_dir = Path(__file__).parent.parent.parent / 'data' / 'raw'
     output_dir.mkdir(parents=True, exist_ok=True)
     
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_file = output_dir / f'clinical_trials_raw_{timestamp}.csv'
+    output_file = output_dir / f'clinical_trials_raw_10k_{timestamp}.csv'
     
     df.to_csv(output_file, index=False)
-    print(f"\nData saved to: {output_file}")
-    print(f"Shape: {df.shape}")
     
-    # Quick summary
-    print("\n=== Data Summary ===")
-    print(f"Total trials: {len(df)}")
-    print(f"\nPhase distribution:")
-    print(df['phase'].value_counts())
-    print(f"\nStatus distribution:")
-    print(df['overall_status'].value_counts())
-    print(f"\nSponsor class distribution:")
-    print(df['lead_sponsor_class'].value_counts())
+    # Summary
+    elapsed = datetime.now() - start_time
+    minutes = elapsed.total_seconds() / 60
+    
+    print(f"\n{'='*80}")
+    print("✅ COLLECTION COMPLETE!")
+    print(f"{'='*80}\n")
+    print(f"📁 File: {output_file}")
+    print(f"📊 Trials: {len(df):,}")
+    print(f"⏱ Time: {minutes:.1f} minutes")
+    print(f"📏 Size: {df.shape[0]:,} rows × {df.shape[1]} columns")
+    
+    # Phase distribution
+    print(f"\n{'='*80}")
+    print("PHASE DISTRIBUTION")
+    print(f"{'='*80}")
+    phase_counts = df['phase'].value_counts().head(15)
+    for phase, count in phase_counts.items():
+        pct = (count / len(df)) * 100
+        bar = '█' * int(pct / 2)
+        print(f"{phase:25s}: {count:5,} ({pct:5.1f}%) {bar}")
+    
+    # Status distribution
+    print(f"\n{'='*80}")
+    print("STATUS DISTRIBUTION")
+    print(f"{'='*80}")
+    status_counts = df['overall_status'].value_counts()
+    for status, count in status_counts.items():
+        pct = (count / len(df)) * 100
+        bar = '█' * int(pct / 2)
+        print(f"{status:30s}: {count:5,} ({pct:5.1f}%) {bar}")
+    
+    # Sponsor types
+    print(f"\n{'='*80}")
+    print("SPONSOR TYPES")
+    print(f"{'='*80}")
+    sponsor_counts = df['lead_sponsor_class'].value_counts()
+    for sponsor_type, count in sponsor_counts.items():
+        pct = (count / len(df)) * 100
+        bar = '█' * int(pct / 2)
+        print(f"{sponsor_type:20s}: {count:5,} ({pct:5.1f}%) {bar}")
+    
+    # Top sponsors
+    print(f"\n{'='*80}")
+    print("TOP 30 SPONSORS BY TRIAL COUNT")
+    print(f"{'='*80}")
+    top_sponsors = df['lead_sponsor_name'].value_counts().head(30)
+    for rank, (sponsor, count) in enumerate(top_sponsors.items(), 1):
+        print(f"{rank:2d}. {sponsor[:60]:60s}: {count:4,} trials")
+    
+    # Year distribution
+    df_temp = df.copy()
+    df_temp['start_year'] = pd.to_datetime(df_temp['start_date'], errors='coerce').dt.year
+    year_dist = df_temp['start_year'].value_counts().sort_index()
+    
+    print(f"\n{'='*80}")
+    print("TRIALS BY START YEAR (Recent 10 years)")
+    print(f"{'='*80}")
+    recent_years = sorted([y for y in year_dist.index if pd.notna(y) and y >= 2015], reverse=True)
+    for year in recent_years[:10]:
+        count = year_dist[year]
+        bar = '█' * int(count / 50)
+        print(f"{int(year)}: {count:5,} trials {bar}")
+    
+    print(f"\n{'='*80}")
+    print("NEXT STEPS")
+    print(f"{'='*80}\n")
+    print("1️⃣  Run feature engineering:")
+    print("   python src/features/engineer_features.py")
+    print("\n2️⃣  Train models on expanded dataset:")
+    print("   python src/models/train_models.py")
+    print("\n3️⃣  Your app will now have 5X more data!")
+    print("   • Better competitive intelligence (more companies)")
+    print("   • Higher model accuracy")
+    print("   • More statistical significance")
+    print(f"\n{'='*80}\n")
     
     return df
 
