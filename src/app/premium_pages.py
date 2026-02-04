@@ -43,17 +43,29 @@ def render_competitive_intelligence_page(df):
     
     # Get unique sponsors for dropdown
     if 'lead_sponsor_name' in df.columns:
-        sponsors = sorted(df['lead_sponsor_name'].dropna().unique().tolist())
+        # Calculate trial counts per sponsor
+        sponsor_counts = df['lead_sponsor_name'].value_counts()
+        
+        # Create formatted options with trial counts
+        sponsor_options = []
+        for sponsor in sponsor_counts.index[:100]:  # Top 100 by trial count
+            count = sponsor_counts[sponsor]
+            sponsor_options.append(f"{sponsor} ({count} trials)")
         
         # Competitor selection
         st.subheader("Select Competitor to Analyze")
-        competitor = st.selectbox(
+        
+        st.info("💡 **Tip:** Companies with more trials (10+) provide more statistically reliable insights. Large pharma companies like Novartis, Pfizer, and Roche are good starting points.")
+        
+        competitor_display = st.selectbox(
             "Company Name",
-            options=[''] + sponsors[:50],  # Show top 50 for demo
-            help="Search for pharmaceutical or biotech company"
+            options=[''] + sponsor_options,
+            help="Search for pharmaceutical or biotech company. Companies are sorted by number of trials."
         )
         
-        if competitor:
+        # Extract actual company name from selection
+        if competitor_display:
+            competitor = competitor_display.split(' (')[0]  # Remove trial count from name
             # Run competitive analysis
             competitor_analysis = create_competitor_dashboard(df, competitor)
             
@@ -119,12 +131,70 @@ def render_competitive_intelligence_page(df):
                 # Strategic insights
                 st.subheader("Strategic Insights")
                 
-                if delta_overall > 10:
-                    st.success(f"✅ {competitor} significantly outperforms industry (+{delta_overall:.1f}%). Strong competitive positioning.")
-                elif delta_overall < -10:
-                    st.info(f"📊 {competitor} underperforms industry ({delta_overall:.1f}%). Potential acquisition target or partner opportunity.")
+                # Check sample size for statistical significance
+                n_trials = competitor_analysis['total_trials']
+                
+                # Statistical significance thresholds
+                if n_trials < 5:
+                    confidence_level = "⚠️ LOW"
+                    confidence_color = "warning"
+                    sample_warning = f"**Note:** Based on only {n_trials} trial(s). Results may not be statistically significant."
+                elif n_trials < 15:
+                    confidence_level = "📊 MODERATE"
+                    confidence_color = "info"
+                    sample_warning = f"Based on {n_trials} trials. Reasonable sample for preliminary insights."
                 else:
-                    st.info(f"📊 {competitor} performs in line with industry ({delta_overall:+.1f}%).")
+                    confidence_level = "✅ HIGH"
+                    confidence_color = "success"
+                    sample_warning = f"Based on {n_trials} trials. Statistically robust sample."
+                
+                # Display confidence level
+                st.markdown(f"**Statistical Confidence:** {confidence_level}")
+                
+                if n_trials < 5:
+                    st.warning(sample_warning)
+                else:
+                    st.info(sample_warning)
+                
+                # Strategic insights with context
+                if delta_overall > 10 and n_trials >= 10:
+                    st.success(f"✅ {competitor} significantly outperforms industry (+{delta_overall:.1f}% with {n_trials} trials). Strong competitive positioning.")
+                elif delta_overall > 10 and n_trials < 10:
+                    st.info(f"📊 {competitor} shows +{delta_overall:.1f}% vs industry, but based on only {n_trials} trial(s). More data needed for conclusive assessment.")
+                elif delta_overall < -10 and n_trials >= 10:
+                    st.info(f"📊 {competitor} underperforms industry ({delta_overall:.1f}% with {n_trials} trials). Potential acquisition target or partner opportunity.")
+                elif delta_overall < -10 and n_trials < 10:
+                    st.info(f"📊 {competitor} shows {delta_overall:.1f}% vs industry, but limited sample size ({n_trials} trial(s)) makes this preliminary.")
+                elif n_trials >= 10:
+                    st.info(f"📊 {competitor} performs in line with industry ({delta_overall:+.1f}% with {n_trials} trials).")
+                else:
+                    st.info(f"📊 {competitor} has {n_trials} trial(s) in dataset. Success rate: {competitor_analysis['success_rate']:.1f}% vs industry {industry_comp['industry_success']:.1f}%. Sample size limits statistical confidence.")
+                
+                # Add interpretation guide
+                with st.expander("📖 How to Interpret These Results"):
+                    st.markdown("""
+                    **Statistical Confidence Levels:**
+                    - **HIGH (15+ trials):** Results are statistically robust and reliable
+                    - **MODERATE (5-14 trials):** Reasonable for preliminary insights, but larger sample preferred
+                    - **LOW (<5 trials):** Results may be due to chance, not representative of true performance
+                    
+                    **Why Sample Size Matters:**
+                    - A company with 1 trial at 100% success is NOT necessarily better than one with 20 trials at 80% success
+                    - Small samples have high variance - one lucky/unlucky trial skews the average
+                    - For reliable competitive intelligence, look for companies with 10+ trials in the dataset
+                    
+                    **Best Practices:**
+                    1. Focus analysis on companies with 10+ trials
+                    2. Use trends over time, not just snapshot success rates
+                    3. Consider therapeutic area mix (oncology has lower success rates)
+                    4. Compare within same indication when possible
+                    
+                    **Data Limitations:**
+                    - Dataset includes ~2,000 Phase 2-3 trials from ClinicalTrials.gov
+                    - Smaller biotech companies may have limited representation
+                    - Large pharma (Novartis, Pfizer, Roche) have 20-40+ trials for robust analysis
+                    """)
+
                 
                 # Recent activity
                 st.subheader("Recent Activity")
