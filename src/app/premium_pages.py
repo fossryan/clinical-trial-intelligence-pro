@@ -133,12 +133,51 @@ def render_competitive_intelligence_page(df):
                 # Download report
                 st.subheader("Export Analysis")
                 
-                # Generate downloadable report
+                # Generate downloadable report - convert numpy types to Python types
+                def convert_to_serializable(obj):
+                    """Convert numpy/pandas types to JSON-serializable types"""
+                    import numpy as np
+                    import pandas as pd
+                    
+                    if isinstance(obj, (np.integer, np.int64)):
+                        return int(obj)
+                    elif isinstance(obj, (np.floating, np.float64)):
+                        return float(obj)
+                    elif isinstance(obj, np.ndarray):
+                        return obj.tolist()
+                    elif isinstance(obj, pd.DataFrame):
+                        return obj.to_dict(orient='records')
+                    elif isinstance(obj, dict):
+                        return {key: convert_to_serializable(value) for key, value in obj.items()}
+                    elif isinstance(obj, (list, tuple)):
+                        return [convert_to_serializable(item) for item in obj]
+                    else:
+                        return obj
+                
+                # Clean the data
+                clean_metrics = {
+                    'total_trials': int(competitor_analysis['total_trials']),
+                    'success_rate': float(competitor_analysis['success_rate']),
+                    'phase2_success': float(competitor_analysis['phase2_success']) if not pd.isna(competitor_analysis['phase2_success']) else None,
+                    'phase3_success': float(competitor_analysis['phase3_success']) if not pd.isna(competitor_analysis['phase3_success']) else None,
+                    'therapeutic_areas': [(area, int(count)) for area, count in competitor_analysis['therapeutic_areas']],
+                    'trend': competitor_analysis['trend']
+                }
+                
+                clean_industry_comp = {
+                    'overall_delta': float(industry_comp['overall_delta']),
+                    'phase2_delta': float(industry_comp['phase2_delta']) if not pd.isna(industry_comp['phase2_delta']) else None,
+                    'phase3_delta': float(industry_comp['phase3_delta']) if not pd.isna(industry_comp['phase3_delta']) else None,
+                    'industry_success': float(industry_comp['industry_success']),
+                    'industry_p2': float(industry_comp['industry_p2']) if not pd.isna(industry_comp['industry_p2']) else None,
+                    'industry_p3': float(industry_comp['industry_p3']) if not pd.isna(industry_comp['industry_p3']) else None
+                }
+                
                 report_data = {
                     'competitor': competitor,
                     'analysis_date': datetime.now().isoformat(),
-                    'metrics': competitor_analysis,
-                    'industry_comparison': industry_comp
+                    'metrics': clean_metrics,
+                    'industry_comparison': clean_industry_comp
                 }
                 
                 st.download_button(
