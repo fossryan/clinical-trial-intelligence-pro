@@ -6,6 +6,7 @@ Enterprise real-time monitoring and site intelligence features
 import streamlit as st
 import pandas as pd
 import sys
+import random
 from pathlib import Path
 
 # Add parent directory to path to import monitoring modules
@@ -220,7 +221,6 @@ def render_site_intelligence_page(df=None):
             phases = ["PHASE1", "PHASE2", "PHASE3"]
             therapeutic_areas = ["Oncology", "Cardiology", "CNS", "Autoimmune"]
             
-            import random
             random.seed(42)
             
             trial_counter = 1
