@@ -422,7 +422,7 @@ def main():
     # ====================
     if page == "📊 Overview":
         st.header("Clinical Trial Risk Intelligence — Overview")
-        st.markdown("Real-time portfolio analytics powered by 2,000 Phase 2–3 trials from ClinicalTrials.gov.")
+        st.markdown("Real-time portfolio analytics powered by 8,500+ clinical trials from ClinicalTrials.gov (all phases, 2010-2025).")
 
         if df is None:
             st.error("No benchmark data found. Run `collect_trials.py` → `engineer_features.py` first.")
