@@ -492,9 +492,9 @@ def main():
         # Charts row
         c1, c2 = st.columns(2)
         with c1:
-            st.plotly_chart(create_success_rate_chart(df), use_container_width=True)
+            st.plotly_chart(create_success_rate_chart(df), width="stretch")
         with c2:
-            st.plotly_chart(create_sankey_diagram(df), use_container_width=True)
+            st.plotly_chart(create_sankey_diagram(df), width="stretch")
 
         # Sponsor benchmark
         st.subheader("Industry vs Academic Success Rates")
@@ -508,7 +508,7 @@ def main():
             textposition='outside'
         )])
         fig.update_layout(yaxis_title="Success Rate (%)", height=320)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         st.markdown('<div class="insight-box">', unsafe_allow_html=True)
         st.markdown("""
@@ -655,7 +655,7 @@ def main():
                 fig.update_layout(height=max(280, 40*len(labels)), xaxis_title="Impact on Success (%)",
                                   shapes=[dict(type='line', x0=0, x1=0, y0=-0.5, y1=len(labels)-0.5,
                                                line=dict(color='#1E3A8A', width=2, dash='dash'))])
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
 
     # ====================
     # PAGE 3: UPLOAD & BATCH PREDICT  ← NEW
@@ -707,7 +707,7 @@ def main():
             df_upload = df_upload[~mask].reset_index(drop=True)
 
             st.markdown(f"✅ Loaded **{len(df_upload)} trials** with **{len(df_upload.columns)} columns**.")
-            st.dataframe(df_upload.head(), use_container_width=True)
+            st.dataframe(df_upload.head(), width="stretch")
 
             # validate minimum columns
             required = {'phase', 'enrollment', 'condition'}
@@ -756,7 +756,7 @@ def main():
 
                 c_pie, c_bar = st.columns(2)
                 with c_pie:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width="stretch")
 
                 # success probability histogram
                 with c_bar:
@@ -764,14 +764,14 @@ def main():
                                         color_discrete_sequence=['#14B8A6'],
                                         title="Success Probability Distribution")
                     fig2.update_layout(xaxis_title="Success Probability (%)", yaxis_title="# Trials", height=320)
-                    st.plotly_chart(fig2, use_container_width=True)
+                    st.plotly_chart(fig2, width="stretch")
 
                 # ranked table (sorted best first)
                 st.subheader("Ranked Trial List")
                 ranked = results_df.sort_values('success_probability', ascending=False).reset_index(drop=True)
                 ranked.index = ranked.index + 1   # 1-based rank
                 ranked.index.name = 'Rank'
-                st.dataframe(ranked, use_container_width=True)
+                st.dataframe(ranked, width="stretch")
 
                 # downloadable CSV
                 st.download_button(
@@ -813,7 +813,7 @@ def main():
             st.markdown('</div>', unsafe_allow_html=True)
             # still show benchmark-only portfolio view
             st.subheader("Public Benchmark Portfolio View")
-            st.plotly_chart(create_success_rate_chart(df), use_container_width=True)
+            st.plotly_chart(create_success_rate_chart(df), width="stretch")
             return
 
         user_results = st.session_state['batch_results']
@@ -869,7 +869,7 @@ def main():
                                  marker_color='#14B8A6'))
             fig.update_layout(barmode='group', yaxis_title='Success Probability (%)', height=380,
                               title='Indication-Level Comparison')
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         # --- risk heat map (enrollment vs phase) ---
         st.subheader("Your Portfolio — Risk Heat Map (Phase × Enrollment)")
@@ -889,7 +889,7 @@ def main():
                                 labels=dict(x='Enrollment Bin', y='Phase', color='Avg Success %'),
                                 title='Average Success Probability Heat Map')
                 fig.update_layout(height=340)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
             else:
                 st.info("Not enough data variation to build heat map.")
         else:
@@ -898,7 +898,7 @@ def main():
         # --- full ranked table ---
         st.subheader("Your Full Portfolio — Ranked by Risk")
         st.dataframe(user_results.sort_values('risk_score', ascending=False).reset_index(drop=True),
-                     use_container_width=True)
+                     width="stretch")
 
     # ====================
     # PAGE 5: DEEP DIVE  (preserved + therapeutic area filter fix)
@@ -960,12 +960,12 @@ def main():
             text=[f"{r*100:.1f}%<br>n={c}" for r, c in zip(enr_agg['mean'], enr_agg['count'])],
             textposition='outside', marker_color='#14B8A6'))
         fig.update_layout(title="Success Rate by Enrollment", xaxis_title="Enrollment", yaxis_title="Success Rate (%)", height=380)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         # trial browser
         st.subheader("Trial Browser")
         display_cols = [c for c in ['nct_id','brief_title','overall_status','phase','enrollment','lead_sponsor_name','condition','trial_success'] if c in df_filtered.columns]
-        st.dataframe(df_filtered[display_cols].head(100), use_container_width=True, height=400)
+        st.dataframe(df_filtered[display_cols].head(100), width="stretch", height=400)
 
     # ====================
     # PAGE 6: MODEL PERFORMANCE (preserved)
@@ -990,7 +990,7 @@ def main():
             cols_show = [c for c in ['Model','roc_auc','f1_score','accuracy'] if c in metrics_df.columns]
             display_metrics = metrics_df[cols_show].copy()
             display_metrics.columns = ['Model'] + [c.replace('_',' ').title() for c in cols_show[1:]]
-            st.dataframe(display_metrics, use_container_width=True)
+            st.dataframe(display_metrics, width="stretch")
 
         # feature importance
         st.subheader("Top Risk Factors")
@@ -1016,7 +1016,7 @@ def main():
                 marker_color='#14B8A6'))
             fig.update_layout(title="Top 15 Predictive Features", xaxis_title="Importance", height=500,
                               yaxis={'categoryorder':'total ascending'})
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         st.markdown('<div class="insight-box">', unsafe_allow_html=True)
         st.markdown("""

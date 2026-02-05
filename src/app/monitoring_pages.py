@@ -109,7 +109,7 @@ def render_real_time_monitoring_page(df=None):
     if 'metrics_df' in report:
         display_df = report['metrics_df'][['trial_id', 'current_enrollment', 'target_enrollment', 
                                            'percent_complete', 'velocity_score', 'on_track']]
-        st.dataframe(display_df, use_container_width=True)
+        st.dataframe(display_df, width="stretch")
 
 
 def render_site_intelligence_page(df=None):
@@ -157,7 +157,7 @@ def render_site_intelligence_page(df=None):
         
         col1, col2 = st.columns([3, 1])
         with col1:
-            fetch_button = st.button("🚀 Fetch Site Data from API", type="primary", use_container_width=True)
+            fetch_button = st.button("🚀 Fetch Site Data from API", type="primary", width="stretch")
         with col2:
             use_demo = st.button("📊 Use Demo Data", help="Load sample data for testing")
         

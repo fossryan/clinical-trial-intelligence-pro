@@ -66,10 +66,10 @@ class SiteIntelligenceEngine:
         print(f"\n🔍 Fetching trials with location data from API...")
         print(f"API URL: {self.base_url}")
         
-        # API parameters - requesting trials with facility information
+        # API parameters - get recruiting trials (simpler query that always works)
+        # We'll filter for location data after fetching
         params = {
-            'query.term': 'AREA[LocationFacility]',  # Only trials with facility data
-            'filter.overallStatus': 'RECRUITING,ACTIVE_NOT_RECRUITING,COMPLETED',
+            'filter.overallStatus': 'RECRUITING,ACTIVE_NOT_RECRUITING',
             'pageSize': 100,  # Max per page
             'format': 'json'
         }

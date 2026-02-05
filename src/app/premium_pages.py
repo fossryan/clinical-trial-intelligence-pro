@@ -83,7 +83,7 @@ def render_competitive_intelligence_page(df):
                 
                 # Comparison chart
                 comp_chart = create_competitor_comparison_chart(competitor_analysis, industry_comp)
-                st.plotly_chart(comp_chart, use_container_width=True)
+                st.plotly_chart(comp_chart, width="stretch")
                 
                 # Delta metrics
                 col1, col2, col3 = st.columns(3)
@@ -126,7 +126,7 @@ def render_competitive_intelligence_page(df):
                         names='Area',
                         title='Trial Distribution by Therapeutic Area'
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width="stretch")
                 
                 # Strategic insights
                 st.subheader("Strategic Insights")
@@ -353,12 +353,12 @@ def render_financial_calculator_page():
             text='Amount ($M)'
         )
         fig.update_traces(texttemplate='$%{text:.1f}M', textposition='outside')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         
         # Waterfall chart
         st.subheader("Expected Value Waterfall")
         waterfall = create_financial_waterfall(cost_breakdown, npv_results)
-        st.plotly_chart(waterfall, use_container_width=True)
+        st.plotly_chart(waterfall, width="stretch")
         
         # Scenario analysis
         st.subheader("Scenario Analysis")
@@ -373,7 +373,7 @@ def render_financial_calculator_page():
             ]
         })
         
-        st.dataframe(scenarios, use_container_width=True)
+        st.dataframe(scenarios, width="stretch")
         
         # Recommendations
         st.subheader("Financial Recommendations")
@@ -509,7 +509,7 @@ def render_protocol_optimizer_page():
             showlegend=True
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         
         # Additional insights
         st.markdown("### Additional Optimization Opportunities")
