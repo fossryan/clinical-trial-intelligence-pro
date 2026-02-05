@@ -154,32 +154,96 @@ def render_site_intelligence_page(df=None):
         - May take 20-30 seconds
         """)
         
-        if st.button("🚀 Fetch Site Data from API", type="primary", use_container_width=True):
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            fetch_button = st.button("🚀 Fetch Site Data from API", type="primary", use_container_width=True)
+        with col2:
+            use_demo = st.button("📊 Use Demo Data", help="Load sample data for testing")
+        
+        if fetch_button:
             with st.spinner("Fetching trials with location data from ClinicalTrials.gov..."):
-                # Fetch trials with facility information
-                trials_list = engine.fetch_trials_for_sites(max_trials=500)
-                
-                if trials_list:
-                    trials_df = pd.DataFrame(trials_list)
-                    st.success(f"✅ Successfully fetched {len(trials_df)} trials with site information!")
+                try:
+                    # Fetch trials with facility information
+                    trials_list = engine.fetch_trials_for_sites(max_trials=500)
                     
-                    # Show a preview of what was fetched
-                    with st.expander("📊 Preview fetched data"):
-                        st.write(f"**Columns**: {', '.join(trials_df.columns.tolist()[:10])}...")
-                        st.dataframe(trials_df.head(3))
-                else:
-                    st.error("""
-                    ❌ **Unable to fetch site data from API**
+                    if trials_list:
+                        trials_df = pd.DataFrame(trials_list)
+                        st.success(f"✅ Successfully fetched {len(trials_df)} trials with site information!")
+                        
+                        # Show a preview of what was fetched
+                        with st.expander("📊 Preview fetched data"):
+                            st.write(f"**Columns**: {', '.join(trials_df.columns.tolist()[:10])}...")
+                            st.dataframe(trials_df.head(3))
+                    else:
+                        st.error("""
+                        ❌ **Unable to fetch site data from API**
+                        
+                        Possible causes:
+                        - API temporarily unavailable
+                        - Network connectivity issues
+                        - Rate limit exceeded
+                        
+                        **Try**: 
+                        1. Wait 1 minute and try again
+                        2. Click "Use Demo Data" button
+                        3. Or upload a CSV file instead
+                        """)
+                except Exception as e:
+                    st.error(f"""
+                    ❌ **Error fetching from API**
                     
-                    Possible causes:
-                    - API temporarily unavailable
-                    - Network connectivity issues
-                    - Rate limit exceeded
+                    Error: {str(e)}
                     
-                    **Try**: 
-                    1. Wait 1 minute and try again
-                    2. Upload a CSV file instead
+                    **Try**:
+                    1. Click "Use Demo Data" for testing
+                    2. Or upload a CSV file
                     """)
+        
+        elif use_demo:
+            # Create demo data for testing
+            st.info("Loading demo data with sample facilities...")
+            
+            demo_data = []
+            facilities = [
+                ("Massachusetts General Hospital", "Boston", "MA", "United States"),
+                ("Mayo Clinic", "Rochester", "MN", "United States"),
+                ("Cleveland Clinic", "Cleveland", "OH", "United States"),
+                ("Johns Hopkins Hospital", "Baltimore", "MD", "United States"),
+                ("UCLA Medical Center", "Los Angeles", "CA", "United States"),
+                ("MD Anderson Cancer Center", "Houston", "TX", "United States"),
+                ("Memorial Sloan Kettering", "New York", "NY", "United States"),
+                ("Stanford Health Care", "Stanford", "CA", "United States"),
+                ("UCSF Medical Center", "San Francisco", "CA", "United States"),
+                ("Cedars-Sinai Medical Center", "Los Angeles", "CA", "United States"),
+            ]
+            
+            phases = ["PHASE1", "PHASE2", "PHASE3"]
+            therapeutic_areas = ["Oncology", "Cardiology", "CNS", "Autoimmune"]
+            
+            import random
+            random.seed(42)
+            
+            trial_counter = 1
+            for facility_name, city, state, country in facilities:
+                # Each facility participates in 3-8 trials
+                num_trials = random.randint(3, 8)
+                for _ in range(num_trials):
+                    demo_data.append({
+                        'nct_id': f'NCT{trial_counter:08d}',
+                        'facility_name': facility_name,
+                        'city': city,
+                        'state': state,
+                        'country': country,
+                        'phase': random.choice(phases),
+                        'therapeutic_area': random.choice(therapeutic_areas),
+                        'enrollment': random.randint(50, 300),
+                        'status': random.choice(['COMPLETED', 'RECRUITING', 'ACTIVE_NOT_RECRUITING']),
+                    })
+                    trial_counter += 1
+            
+            trials_df = pd.DataFrame(demo_data)
+            st.success(f"✅ Loaded demo data with {len(trials_df)} trial-site records from {len(facilities)} facilities")
+            st.info("💡 This is sample data for demonstration purposes")
     
     else:  # Upload CSV
         st.info("""
@@ -274,6 +338,3 @@ def render_site_intelligence_page(df=None):
                         st.write("**Considerations:**")
                         for concern in rec.concerns:
                             st.write(f"- {concern}")
-    else:
-        if use_uploaded:
-            st.info("👆 Upload trial data to begin site analysis")
