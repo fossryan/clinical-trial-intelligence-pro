@@ -34,30 +34,23 @@ def render_real_time_monitoring_page(df=None):
     
     monitor = RealTimeTrialMonitor()
     
-    # Check if dataframe was passed from main app
-    if df is not None and not df.empty:
-        st.success(f"✓ Using loaded trial data ({len(df)} trials)")
-        trials_df = df
-        skip_fetch = True
-    else:
-        skip_fetch = False
-        trials_df = None
+    # ALWAYS fetch live data from API - don't use historical ML training data
+    # Historical data lacks the real-time fields needed (current enrollment, start dates, etc.)
+    st.info("🔴 Fetching live data from ClinicalTrials.gov API...")
     
-    # Fetch controls (only if not using passed df)
-    if not skip_fetch:
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            sponsor_filter = st.text_input("Filter by Sponsor (optional)", "")
-        with col2:
-            if st.button("Refresh Data", type="primary"):
-                st.rerun()
-        
-        # Fetch active trials
-        with st.spinner("Fetching active trials from ClinicalTrials.gov..."):
-            if sponsor_filter:
-                trials_df = monitor.fetch_active_trials(sponsor=sponsor_filter)
-            else:
-                trials_df = monitor.fetch_active_trials()
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        sponsor_filter = st.text_input("Filter by Sponsor (optional)", "")
+    with col2:
+        if st.button("Refresh Data", type="primary"):
+            st.rerun()
+    
+    # Fetch active trials from API
+    with st.spinner("Fetching active trials from ClinicalTrials.gov..."):
+        if sponsor_filter:
+            trials_df = monitor.fetch_active_trials(sponsor=sponsor_filter)
+        else:
+            trials_df = monitor.fetch_active_trials()
     
     if trials_df.empty:
         st.warning("No active trials found.")
@@ -130,26 +123,41 @@ def render_site_intelligence_page(df=None):
     **Enterprise Feature**: AI-powered site selection, performance tracking, and geographic optimization.
     """)
     
-    # Check if dataframe was passed from main app
-    if df is not None and not df.empty:
-        st.success(f"✓ Using loaded trial data ({len(df)} trials)")
-        trials_df = df
-        use_uploaded = False
-    else:
-        st.info("""
-        **Note**: This feature requires clinical trial data with site/location information. 
-        Upload a dataset or connect to your proprietary trial database.
-        """)
-        use_uploaded = True
-        trials_df = None
+    # Build site database from API or uploaded data
+    engine = SiteIntelligenceEngine()
     
-    # File upload for site data (only if no df passed)
-    if use_uploaded:
+    st.info("""
+    **Data Source Options**:
+    - 🌐 **Fetch from API**: Get live facility/location data from ClinicalTrials.gov
+    - 📁 **Upload CSV**: Use your proprietary trial data with site information
+    """)
+    
+    data_source = st.radio(
+        "Choose data source:",
+        ["Fetch from ClinicalTrials.gov API", "Upload CSV with site data"],
+        horizontal=True
+    )
+    
+    trials_df = None
+    
+    if data_source == "Fetch from ClinicalTrials.gov API":
+        if st.button("Fetch Site Data from API", type="primary"):
+            with st.spinner("Fetching trials with location data from ClinicalTrials.gov..."):
+                # Fetch trials with facility information
+                trials_list = engine.fetch_trials_for_sites(max_trials=500)
+                
+                if trials_list:
+                    trials_df = pd.DataFrame(trials_list)
+                    st.success(f"✓ Fetched {len(trials_df)} trials with site information")
+                else:
+                    st.error("Unable to fetch site data from API. Please try uploading a CSV instead.")
+    
+    else:  # Upload CSV
         uploaded_file = st.file_uploader("Upload trial data with site information (CSV)", type=['csv'])
         
         if uploaded_file is not None:
             trials_df = pd.read_csv(uploaded_file)
-            st.success(f"✓ Loaded {len(trials_df)} trials")
+            st.success(f"✓ Loaded {len(trials_df)} trials from CSV")
     
     if trials_df is not None:
         
