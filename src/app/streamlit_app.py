@@ -122,15 +122,44 @@ st.markdown("""
 # DATA LOADERS
 # ---------------------------------------------------------------------------
 @st.cache_data
-def load_data():
-    """Load the ClinicalTrials.gov processed data (public benchmark)"""
+def load_data(include_all=False):
+    """
+    Load the ClinicalTrials.gov processed data (public benchmark)
+    
+    Args:
+        include_all: If True, includes all trials. If False, only trials with known outcomes.
+    """
     data_dir = Path(__file__).parent.parent.parent / 'data' / 'processed'
     feature_files = list(data_dir.glob('clinical_trials_features_*.csv'))
     if not feature_files:
         return None
-    latest_file = max(feature_files, key=lambda p: p.stat().st_mtime)
-    df = pd.read_csv(latest_file)
-    return df[df['trial_success'].notna()].copy()
+    
+    # Find the file with the most trials (best dataset)
+    best_file = None
+    max_trials = 0
+    
+    for file in feature_files:
+        # Quick check: count lines (trials)
+        with open(file, 'r') as f:
+            line_count = sum(1 for _ in f) - 1  # Subtract header
+        
+        if line_count > max_trials:
+            max_trials = line_count
+            best_file = file
+    
+    if best_file is None:
+        return None
+    
+    print(f"Loading {best_file.name} with {max_trials:,} trials")
+    df = pd.read_csv(best_file)
+    
+    if include_all:
+        print(f"Loaded all {len(df):,} trials")
+        return df.copy()
+    else:
+        filtered_df = df[df['trial_success'].notna()].copy()
+        print(f"Loaded {len(filtered_df):,} trials with known outcomes (filtered from {len(df):,})")
+        return filtered_df
 
 
 @st.cache_resource
@@ -398,13 +427,22 @@ def generate_template_csv() -> bytes:
 # MAIN APP
 # ---------------------------------------------------------------------------
 def main():
-    # ---- load core data & models ----
-    df = load_data()
-    xgb_model, lgb_model, feature_names = load_models()
-
     # ---- SIDEBAR ----
     st.sidebar.markdown("## 🧬 Clinical Trial Risk Intelligence", unsafe_allow_html=False)
     st.sidebar.markdown("---")
+    
+    # Data loading option
+    st.sidebar.markdown("### 📊 Dataset Options")
+    include_all_trials = st.sidebar.checkbox(
+        "Load all trials (8,471)",
+        value=False,
+        help="Include trials without outcome data. Useful for showing full dataset size. Uncheck to only use trials with known outcomes (5,745) for training."
+    )
+    st.sidebar.markdown("---")
+    
+    # ---- load core data & models ----
+    df = load_data(include_all=include_all_trials)
+    xgb_model, lgb_model, feature_names = load_models()
 
     page = st.sidebar.radio("Navigation", [
         "📊 Overview",
