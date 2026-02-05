@@ -123,41 +123,100 @@ def render_site_intelligence_page(df=None):
     **Enterprise Feature**: AI-powered site selection, performance tracking, and geographic optimization.
     """)
     
-    # Build site database from API or uploaded data
-    engine = SiteIntelligenceEngine()
+    # IMPORTANT: Site Intelligence needs facility-level data
+    # The historical ML training data (df) doesn't have facility_name, city, country columns
+    # So we ALWAYS require user to fetch from API or upload CSV
     
-    st.info("""
-    **Data Source Options**:
-    - 🌐 **Fetch from API**: Get live facility/location data from ClinicalTrials.gov
-    - 📁 **Upload CSV**: Use your proprietary trial data with site information
+    st.warning("""
+    ⚠️ **Site Intelligence requires facility-level location data** (facility_name, city, country, state).
+    
+    The historical ML training dataset does not include individual site/facility details. 
+    Please choose a data source below:
     """)
     
+    engine = SiteIntelligenceEngine()
+    
     data_source = st.radio(
-        "Choose data source:",
-        ["Fetch from ClinicalTrials.gov API", "Upload CSV with site data"],
-        horizontal=True
+        "**Choose Data Source:**",
+        ["🌐 Fetch from ClinicalTrials.gov API", "📁 Upload CSV with site data"],
+        horizontal=True,
+        help="API will fetch trials with location data. CSV should include columns: facility_name, city, country, state"
     )
     
     trials_df = None
     
-    if data_source == "Fetch from ClinicalTrials.gov API":
-        if st.button("Fetch Site Data from API", type="primary"):
+    if data_source == "🌐 Fetch from ClinicalTrials.gov API":
+        st.info("""
+        **What this does**:
+        - Fetches up to 500 trials from ClinicalTrials.gov
+        - Extracts facility names, cities, states, countries
+        - Builds site performance database
+        - May take 20-30 seconds
+        """)
+        
+        if st.button("🚀 Fetch Site Data from API", type="primary", use_container_width=True):
             with st.spinner("Fetching trials with location data from ClinicalTrials.gov..."):
                 # Fetch trials with facility information
                 trials_list = engine.fetch_trials_for_sites(max_trials=500)
                 
                 if trials_list:
                     trials_df = pd.DataFrame(trials_list)
-                    st.success(f"✓ Fetched {len(trials_df)} trials with site information")
+                    st.success(f"✅ Successfully fetched {len(trials_df)} trials with site information!")
+                    
+                    # Show a preview of what was fetched
+                    with st.expander("📊 Preview fetched data"):
+                        st.write(f"**Columns**: {', '.join(trials_df.columns.tolist()[:10])}...")
+                        st.dataframe(trials_df.head(3))
                 else:
-                    st.error("Unable to fetch site data from API. Please try uploading a CSV instead.")
+                    st.error("""
+                    ❌ **Unable to fetch site data from API**
+                    
+                    Possible causes:
+                    - API temporarily unavailable
+                    - Network connectivity issues
+                    - Rate limit exceeded
+                    
+                    **Try**: 
+                    1. Wait 1 minute and try again
+                    2. Upload a CSV file instead
+                    """)
     
     else:  # Upload CSV
-        uploaded_file = st.file_uploader("Upload trial data with site information (CSV)", type=['csv'])
+        st.info("""
+        **CSV Requirements**:
+        Your file should include these columns:
+        - `facility_name` or `site_name` - Name of the facility/hospital
+        - `city` - City name
+        - `country` - Country name
+        - `state` (optional) - State/province
+        - Plus any trial metadata (phase, therapeutic area, etc.)
+        """)
+        
+        uploaded_file = st.file_uploader(
+            "Upload trial data with site information (CSV)", 
+            type=['csv'],
+            help="CSV file with facility_name, city, and country columns"
+        )
         
         if uploaded_file is not None:
             trials_df = pd.read_csv(uploaded_file)
-            st.success(f"✓ Loaded {len(trials_df)} trials from CSV")
+            st.success(f"✅ Loaded {len(trials_df)} trials from CSV")
+            
+            # Validate columns
+            required_cols = ['facility_name', 'city', 'country']
+            missing_cols = [col for col in required_cols if col not in trials_df.columns]
+            
+            if missing_cols:
+                st.error(f"""
+                ❌ **Missing required columns**: {', '.join(missing_cols)}
+                
+                **Your columns**: {', '.join(trials_df.columns.tolist())}
+                
+                Please ensure your CSV includes: facility_name, city, country
+                """)
+                trials_df = None
+            else:
+                st.success("✅ All required columns present!")
     
     if trials_df is not None:
         
