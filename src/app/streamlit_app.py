@@ -31,6 +31,17 @@ except ImportError:
     PREMIUM_FEATURES_AVAILABLE = False
     print("Premium features not available - premium_pages.py not found")
 
+# Import enterprise monitoring features
+try:
+    from monitoring_pages import (
+        render_real_time_monitoring_page,
+        render_site_intelligence_page
+    )
+    MONITORING_FEATURES_AVAILABLE = True
+except ImportError:
+    MONITORING_FEATURES_AVAILABLE = False
+    print("Monitoring features not available - monitoring_pages.py not found")
+
 
 # ---------------------------------------------------------------------------
 # PAGE CONFIG & CSS
@@ -402,6 +413,9 @@ def main():
         "📁 Portfolio Analyzer",
         "🔍 Deep Dive Analytics",
         "📈 Model Performance",
+        "---",
+        "⚡ Real-Time Monitoring 🚀",
+        "🏥 Site Intelligence 🚀",
         "---",
         "🎯 Competitive Intelligence 💎",
         "💰 Financial Calculator 💎",
@@ -979,6 +993,24 @@ def main():
         """)
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # ====================
+    # ENTERPRISE MONITORING PAGES
+    # ====================
+    
+    elif page == "⚡ Real-Time Monitoring 🚀":
+        if MONITORING_FEATURES_AVAILABLE:
+            render_real_time_monitoring_page(df)
+        else:
+            st.error("Real-Time Monitoring features not available. Please ensure monitoring_pages.py is properly installed.")
+            st.info("This enterprise feature provides live trial tracking, enrollment velocity monitoring, and automated risk alerts.")
+    
+    elif page == "🏥 Site Intelligence 🚀":
+        if MONITORING_FEATURES_AVAILABLE:
+            render_site_intelligence_page(df)
+        else:
+            st.error("Site Intelligence features not available. Please ensure monitoring_pages.py is properly installed.")
+            st.info("This enterprise feature provides AI-powered site selection, performance tracking, and geographic optimization.")
+    
     # ====================
     # PREMIUM PAGES
     # ====================
