@@ -20,7 +20,7 @@ except ImportError as e:
     MODULES_AVAILABLE = False
 
 
-def render_real_time_monitoring_page():
+def render_real_time_monitoring_page(df=None):
     """Render the real-time monitoring dashboard"""
     st.title("🔴 Real-Time Trial Monitoring")
     
@@ -34,20 +34,30 @@ def render_real_time_monitoring_page():
     
     monitor = RealTimeTrialMonitor()
     
-    # Fetch controls
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        sponsor_filter = st.text_input("Filter by Sponsor (optional)", "")
-    with col2:
-        if st.button("Refresh Data", type="primary"):
-            st.rerun()
+    # Check if dataframe was passed from main app
+    if df is not None and not df.empty:
+        st.success(f"✓ Using loaded trial data ({len(df)} trials)")
+        trials_df = df
+        skip_fetch = True
+    else:
+        skip_fetch = False
+        trials_df = None
     
-    # Fetch active trials
-    with st.spinner("Fetching active trials from ClinicalTrials.gov..."):
-        if sponsor_filter:
-            trials_df = monitor.fetch_active_trials(sponsor=sponsor_filter)
-        else:
-            trials_df = monitor.fetch_active_trials()
+    # Fetch controls (only if not using passed df)
+    if not skip_fetch:
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            sponsor_filter = st.text_input("Filter by Sponsor (optional)", "")
+        with col2:
+            if st.button("Refresh Data", type="primary"):
+                st.rerun()
+        
+        # Fetch active trials
+        with st.spinner("Fetching active trials from ClinicalTrials.gov..."):
+            if sponsor_filter:
+                trials_df = monitor.fetch_active_trials(sponsor=sponsor_filter)
+            else:
+                trials_df = monitor.fetch_active_trials()
     
     if trials_df.empty:
         st.warning("No active trials found.")
@@ -108,7 +118,7 @@ def render_real_time_monitoring_page():
         st.dataframe(display_df, use_container_width=True)
 
 
-def render_site_intelligence_page():
+def render_site_intelligence_page(df=None):
     """Render the site intelligence dashboard"""
     st.title("🏥 Site Intelligence")
     
@@ -120,16 +130,28 @@ def render_site_intelligence_page():
     **Enterprise Feature**: AI-powered site selection, performance tracking, and geographic optimization.
     """)
     
-    st.info("""
-    **Note**: This feature requires clinical trial data with site/location information. 
-    Upload a dataset or connect to your proprietary trial database.
-    """)
+    # Check if dataframe was passed from main app
+    if df is not None and not df.empty:
+        st.success(f"✓ Using loaded trial data ({len(df)} trials)")
+        trials_df = df
+        use_uploaded = False
+    else:
+        st.info("""
+        **Note**: This feature requires clinical trial data with site/location information. 
+        Upload a dataset or connect to your proprietary trial database.
+        """)
+        use_uploaded = True
+        trials_df = None
     
-    # File upload for site data
-    uploaded_file = st.file_uploader("Upload trial data with site information (CSV)", type=['csv'])
+    # File upload for site data (only if no df passed)
+    if use_uploaded:
+        uploaded_file = st.file_uploader("Upload trial data with site information (CSV)", type=['csv'])
+        
+        if uploaded_file is not None:
+            trials_df = pd.read_csv(uploaded_file)
+            st.success(f"✓ Loaded {len(trials_df)} trials")
     
-    if uploaded_file is not None:
-        trials_df = pd.read_csv(uploaded_file)
+    if trials_df is not None:
         
         st.success(f"✓ Loaded {len(trials_df)} trials")
         
@@ -186,4 +208,5 @@ def render_site_intelligence_page():
                         for concern in rec.concerns:
                             st.write(f"- {concern}")
     else:
-        st.info("👆 Upload trial data to begin site analysis")
+        if use_uploaded:
+            st.info("👆 Upload trial data to begin site analysis")
