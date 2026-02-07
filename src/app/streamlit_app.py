@@ -170,14 +170,25 @@ def load_models():
     # Try to load indication-specific models first
     try:
         import sys
-        sys.path.append(str(Path(__file__).parent.parent / 'models'))
-        from indication_specific_models import IndicationSpecificModelEngine
+        
+        # Add src directory to Python path for proper imports
+        src_dir = Path(__file__).parent.parent
+        if str(src_dir) not in sys.path:
+            sys.path.insert(0, str(src_dir))
+        
+        # Import using package structure
+        from models.indication_specific_models import IndicationSpecificModelEngine
         
         indication_engine = IndicationSpecificModelEngine()
         indication_engine.load_models(model_dir)
         
+        print("✅ Loaded indication-specific models")
+        
         # Return indication engine and feature names
         return indication_engine, None, indication_engine.feature_names
+    except ImportError as e:
+        print(f"⚠️  Could not import indication models: {e}")
+        print("   Falling back to standard models...")
     except Exception as e:
         print(f"⚠️  Indication models not available: {e}")
         print("   Falling back to standard models...")
@@ -339,7 +350,8 @@ def batch_predict(df_upload: pd.DataFrame, model, feature_names: list) -> pd.Dat
     results = []
     for idx, row in df_upload.iterrows():
         feats       = row_to_features(row)
-        succ, risk  = predict_single(feats, model, feature_names)
+        result = predict_single(feats, model, feature_names)
+        succ, risk = result[0], result[1]
         results.append({
             'row_index':         idx,
             'trial_name':        row.get('brief_title', row.get('trial_name', f'Trial {idx+1}')),
