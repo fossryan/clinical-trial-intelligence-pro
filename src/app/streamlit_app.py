@@ -47,7 +47,7 @@ except ImportError:
 # PAGE CONFIG & CSS
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Clinical Trial Risk Intelligence",
+    page_title="Encinitas | Clinical Trial Intelligence",
     page_icon="🧬",
     layout="wide",
     initial_sidebar_state="collapsed"  # Hide sidebar by default
@@ -960,29 +960,107 @@ def generate_template_csv() -> bytes:
 # MAIN APP
 # ---------------------------------------------------------------------------
 def main():
-    # ---- TOP HEADER BAR ----
+    # ---- ENCINITAS BRANDED HEADER ----
+    col_logo, col_title = st.columns([1, 5])
+    
+    with col_logo:
+        try:
+            # Try multiple paths for logo (works locally and on Streamlit Cloud)
+            logo_paths = [
+                "encinitaslogo.png",
+                "/mnt/user-data/outputs/encinitaslogo.png",
+                str(Path(__file__).parent / "encinitaslogo.png"),
+                str(Path(__file__).parent.parent.parent / "encinitaslogo.png")
+            ]
+            logo_loaded = False
+            for logo_path in logo_paths:
+                try:
+                    st.image(logo_path, width=140)
+                    logo_loaded = True
+                    break
+                except:
+                    continue
+            
+            if not logo_loaded:
+                # Fallback: Show text logo with styling
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
+                            padding: 1rem; 
+                            border-radius: 12px; 
+                            text-align: center;">
+                    <h2 style="color: white; margin: 0; font-weight: 800; letter-spacing: 0.1em;">E</h2>
+                </div>
+                """, unsafe_allow_html=True)
+        except Exception as e:
+            # Final fallback
+            st.markdown("### ENCINITAS")
+    
+    with col_title:
+        st.markdown("""
+        <div style="padding-top: 1rem;">
+            <h1 style="color: #12dbb4; margin: 0; font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em;">
+                ENCINITAS
+            </h1>
+            <p style="color: #545454; margin: 0.25rem 0 0 0; font-size: 1.1rem; font-weight: 500;">
+                Clinical Trial Intelligence & Portfolio Analytics Platform
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("<hr style='margin: 1.5rem 0; border: none; height: 2px; background: linear-gradient(90deg, #12dbb4 0%, #14d8e2 50%, transparent 100%);'>", unsafe_allow_html=True)
+    
+    # ---- FEATURE NAVIGATION BAR ----
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
-                padding: 1.5rem 2rem; 
-                border-radius: 0 0 16px 16px; 
-                margin: -6rem -6rem 2rem -6rem;
-                box-shadow: 0 4px 12px rgba(18, 219, 180, 0.2);">
-        <h1 style="color: white; margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">
-            🧬 Clinical Trial Intelligence Pro
-        </h1>
-        <p style="color: rgba(255, 255, 255, 0.9); margin: 0.5rem 0 0 0; font-size: 1rem;">
-            AI-Powered Portfolio Analytics & Risk Prediction Platform
+    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); 
+                padding: 1rem 1.5rem; 
+                border-radius: 12px; 
+                border: 2px solid #12dbb4;
+                margin-bottom: 1.5rem;
+                box-shadow: 0 2px 8px rgba(18, 219, 180, 0.1);">
+        <p style="color: #545454; margin: 0 0 0.75rem 0; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">
+            🎯 Key Features Available
         </p>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                📊 Portfolio Analytics
+            </span>
+            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                🎯 AI Risk Prediction
+            </span>
+            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                📤 Batch Upload & Analysis
+            </span>
+            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                📈 Model Performance Metrics
+            </span>
+            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                🔍 Deep Analytics & Insights
+            </span>
+            <span style="background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                ⚡ Real-Time Monitoring
+            </span>
+            <span style="background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                🏥 Site Intelligence
+            </span>
+            <span style="background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                💎 Competitive Analysis
+            </span>
+            <span style="background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                💰 Financial Modeling
+            </span>
+            <span style="background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                🔬 Protocol Optimization
+            </span>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
-    # ---- TOP NAVIGATION (Horizontal pills style) ----
-    col1, col2, col3 = st.columns([2, 3, 2])
+    # ---- PAGE NAVIGATION ----
+    col_nav, col_settings = st.columns([4, 1])
     
-    with col2:
-        # Main navigation - centered
+    with col_nav:
         page = st.selectbox(
-            "Navigate to:",
+            "📍 Navigate to Page:",
             [
                 "📊 Overview",
                 "🎯 Risk Predictor",
@@ -999,12 +1077,10 @@ def main():
                 "🔬 Protocol Optimizer 💎",
                 "📤 Export Center",
                 "💎 Pricing"
-            ],
-            label_visibility="collapsed"
+            ]
         )
     
-    with col3:
-        # Dataset settings - right aligned
+    with col_settings:
         with st.popover("⚙️ Settings", use_container_width=True):
             include_all_trials = st.checkbox(
                 "Load all 8,471 trials",
@@ -1017,7 +1093,7 @@ def main():
             st.caption("• Your CSV uploads")
             st.caption("*v2.0 Enterprise*")
     
-    st.markdown("<div style='margin: 0.5rem 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin: 1rem 0;'></div>", unsafe_allow_html=True)
     
     # ---- load core data & models ----
     df = load_data(include_all=include_all_trials)
