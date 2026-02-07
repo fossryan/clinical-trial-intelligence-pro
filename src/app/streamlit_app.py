@@ -50,7 +50,7 @@ st.set_page_config(
     page_title="Clinical Trial Risk Intelligence",
     page_icon="🧬",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # Hide sidebar by default
 )
 
 st.markdown("""
@@ -68,37 +68,65 @@ st.markdown("""
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
+    /* Hide sidebar completely for full-width experience */
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+    
+    /* Remove sidebar collapse button */
+    [data-testid="collapsedControl"] {
+        display: none;
+    }
+    
     /* Main app background */
     .main {
         background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        padding-top: 0 !important;
     }
     
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #545454 0%, #3a3a3a 100%);
+    /* Remove default Streamlit padding to make header flush */
+    .block-container {
+        padding-top: 3rem;
+        padding-left: 3rem;
+        padding-right: 3rem;
+        max-width: 100%;
     }
     
-    [data-testid="stSidebar"] .css-1d391kg, 
-    [data-testid="stSidebar"] .css-pkbazv {
-        color: #ffffff;
+    /* ========== TOP NAVIGATION ========== */
+    .stSelectbox {
+        background: white;
+        border-radius: 12px;
+        padding: 0.5rem;
+        box-shadow: 0 2px 8px rgba(84, 84, 84, 0.08);
     }
     
-    /* Sidebar text and icons */
-    [data-testid="stSidebar"] p,
-    [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] label {
-        color: #ffffff !important;
+    .stSelectbox > div > div {
+        background: white;
+        border: 2px solid #12dbb4;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1rem;
     }
     
-    /* Sidebar radio buttons */
-    [data-testid="stSidebar"] .st-emotion-cache-16txtl3 {
-        color: #12dbb4;
+    .stSelectbox > div > div:hover {
+        border-color: #14d8e2;
+        box-shadow: 0 0 0 3px rgba(18, 219, 180, 0.1);
     }
     
-    /* Active sidebar item */
-    [data-testid="stSidebar"] .st-emotion-cache-1gulkj5 {
-        background-color: rgba(18, 219, 180, 0.15);
-        border-left: 4px solid #12dbb4;
+    /* Popover for settings */
+    [data-testid="stPopover"] button {
+        background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    [data-testid="stPopover"] button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(84, 84, 84, 0.3);
     }
     
     /* ========== HEADERS ========== */
@@ -125,6 +153,459 @@ st.markdown("""
         color: #545454;
         font-weight: 700;
     }
+    
+    /* Page headers with gradient underline */
+    h1::after {
+        content: '';
+        display: block;
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, #12dbb4 0%, #14d8e2 100%);
+        margin-top: 0.75rem;
+        border-radius: 2px;
+    }
+    
+    /* ========== METRIC CARDS ========== */
+    .metric-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        box-shadow: 0 4px 6px rgba(18, 219, 180, 0.1), 
+                    0 1px 3px rgba(0, 0, 0, 0.08);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(18, 219, 180, 0.2), 
+                    0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #12dbb4 0%, #14d8e2 100%);
+    }
+    
+    /* ========== INSIGHT BOX ========== */
+    .insight-box {
+        background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 5px solid #12dbb4;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 8px rgba(84, 84, 84, 0.08);
+        position: relative;
+    }
+    
+    .insight-box::before {
+        content: '💡';
+        position: absolute;
+        top: 1.5rem;
+        left: -2.5rem;
+        font-size: 2rem;
+    }
+    
+    /* ========== UPLOAD BOX ========== */
+    .upload-box {
+        background: linear-gradient(135deg, #f0fffe 0%, #f8ffff 100%);
+        padding: 2.5rem;
+        border-radius: 16px;
+        border: 3px dashed #12dbb4;
+        margin: 2rem 0;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .upload-box:hover {
+        background: linear-gradient(135deg, #e6fffc 0%, #f0fffe 100%);
+        border-color: #14d8e2;
+        transform: scale(1.02);
+    }
+    
+    /* ========== SUCCESS BOX ========== */
+    .success-box {
+        background: linear-gradient(135deg, #e6fff9 0%, #f0fffc 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 5px solid #12dbb4;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 8px rgba(18, 219, 180, 0.1);
+    }
+    
+    /* ========== ERROR BOX ========== */
+    .error-box {
+        background: linear-gradient(135deg, #fff0f0 0%, #fff5f5 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 5px solid #ff4444;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 8px rgba(255, 68, 68, 0.1);
+    }
+    
+    /* ========== PORTFOLIO CARD ========== */
+    .portfolio-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fffd 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        border: 2px solid #12dbb4;
+        margin: 1rem 0;
+        box-shadow: 0 4px 12px rgba(18, 219, 180, 0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .portfolio-card:hover {
+        transform: translateX(8px);
+        box-shadow: 0 8px 24px rgba(18, 219, 180, 0.25);
+    }
+    
+    /* ========== TEMPLATE BOX ========== */
+    .template-box {
+        background: linear-gradient(135deg, #f0fffe 0%, #ffffff 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        border: 2px solid #14d8e2;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 12px rgba(20, 216, 226, 0.12);
+    }
+    
+    /* ========== BUTTONS ========== */
+    .stButton > button {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(18, 219, 180, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(18, 219, 180, 0.4);
+        background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%);
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0);
+    }
+    
+    /* Primary button variant */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+    }
+    
+    /* Secondary button variant */
+    .stButton > button[kind="secondary"] {
+        background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%);
+    }
+    
+    /* ========== DOWNLOAD BUTTON ========== */
+    .stDownloadButton > button {
+        background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(20, 216, 226, 0.3);
+    }
+    
+    .stDownloadButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(20, 216, 226, 0.4);
+    }
+    
+    /* ========== INPUTS ========== */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > select {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+        background-color: white;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stNumberInput > div > div > input:focus,
+    .stSelectbox > div > div > select:focus {
+        border-color: #12dbb4;
+        box-shadow: 0 0 0 3px rgba(18, 219, 180, 0.1);
+    }
+    
+    /* ========== TABS ========== */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: transparent;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: transparent;
+        border-radius: 8px 8px 0 0;
+        padding: 12px 24px;
+        color: #545454;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: rgba(18, 219, 180, 0.05);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white !important;
+    }
+    
+    /* ========== DATAFRAME / TABLE ========== */
+    .dataframe {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(84, 84, 84, 0.08);
+    }
+    
+    .dataframe thead tr {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white;
+    }
+    
+    .dataframe thead th {
+        padding: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.875rem;
+    }
+    
+    .dataframe tbody tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    
+    .dataframe tbody tr:hover {
+        background-color: rgba(18, 219, 180, 0.05);
+        transition: background-color 0.2s ease;
+    }
+    
+    .dataframe tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    /* ========== METRICS ========== */
+    [data-testid="stMetricValue"] {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: #545454;
+        font-weight: 600;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    [data-testid="stMetricDelta"] {
+        font-weight: 600;
+    }
+    
+    /* ========== EXPANDER ========== */
+    .streamlit-expanderHeader {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 12px;
+        border: 2px solid #e0e0e0;
+        padding: 1rem;
+        font-weight: 600;
+        color: #545454;
+        transition: all 0.3s ease;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        border-color: #12dbb4;
+        background: linear-gradient(135deg, #f0fffe 0%, #ffffff 100%);
+    }
+    
+    /* ========== PROGRESS BAR ========== */
+    .stProgress > div > div > div {
+        background: linear-gradient(90deg, #12dbb4 0%, #14d8e2 100%);
+        border-radius: 8px;
+    }
+    
+    /* ========== SPINNER ========== */
+    .stSpinner > div {
+        border-top-color: #12dbb4 !important;
+    }
+    
+    /* ========== FILE UPLOADER ========== */
+    [data-testid="stFileUploader"] {
+        border: 3px dashed #12dbb4;
+        border-radius: 16px;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f0fffe 0%, #ffffff 100%);
+        transition: all 0.3s ease;
+    }
+    
+    [data-testid="stFileUploader"]:hover {
+        border-color: #14d8e2;
+        background: linear-gradient(135deg, #e6fffc 0%, #f8ffff 100%);
+    }
+    
+    /* ========== RADIO BUTTONS ========== */
+    .stRadio > label {
+        color: #545454;
+        font-weight: 600;
+    }
+    
+    .stRadio [role="radiogroup"] label {
+        background-color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+        margin: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stRadio [role="radiogroup"] label:hover {
+        border-color: #12dbb4;
+        background-color: rgba(18, 219, 180, 0.05);
+    }
+    
+    .stRadio [role="radiogroup"] label[data-checked="true"] {
+        border-color: #12dbb4;
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white;
+    }
+    
+    /* ========== CHECKBOX ========== */
+    .stCheckbox label {
+        color: #545454;
+        font-weight: 500;
+    }
+    
+    .stCheckbox input[type="checkbox"]:checked {
+        background-color: #12dbb4;
+        border-color: #12dbb4;
+    }
+    
+    /* ========== INFO/WARNING/ERROR MESSAGES ========== */
+    .stAlert {
+        border-radius: 12px;
+        border-left: 5px solid;
+        padding: 1rem 1.5rem;
+    }
+    
+    .stAlert[data-baseweb="notification"] {
+        background-color: rgba(18, 219, 180, 0.1);
+        border-left-color: #12dbb4;
+    }
+    
+    /* ========== CUSTOM SCROLLBAR ========== */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%);
+    }
+    
+    /* ========== TOOLTIPS ========== */
+    [data-testid="stTooltipIcon"] {
+        color: #12dbb4;
+    }
+    
+    /* ========== PLOTLY CHARTS ========== */
+    .js-plotly-plot {
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(84, 84, 84, 0.08);
+    }
+    
+    /* ========== PREMIUM BADGE ========== */
+    .premium-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-left: 0.5rem;
+    }
+    
+    /* ========== DIVIDER ========== */
+    hr {
+        margin: 2rem 0;
+        border: none;
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, #12dbb4 50%, transparent 100%);
+    }
+    
+    /* ========== ANIMATIONS ========== */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .metric-card,
+    .portfolio-card,
+    .template-box {
+        animation: fadeIn 0.6s ease-out;
+    }
+    
+    /* ========== RESPONSIVE DESIGN ========== */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2rem;
+        }
+        
+        .sub-header {
+            font-size: 1rem;
+        }
+        
+        .metric-card,
+        .portfolio-card {
+            padding: 1rem;
+        }
+        
+        .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
     
     /* ========== METRIC CARDS ========== */
     .metric-card {
@@ -916,47 +1397,68 @@ def generate_template_csv() -> bytes:
 # MAIN APP
 # ---------------------------------------------------------------------------
 def main():
-    # ---- SIDEBAR ----
-    st.sidebar.markdown("## 🧬 Clinical Trial Risk Intelligence", unsafe_allow_html=False)
-    st.sidebar.markdown("---")
+    # ---- TOP HEADER BAR ----
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
+                padding: 1.5rem 2rem; 
+                border-radius: 0 0 16px 16px; 
+                margin: -6rem -6rem 2rem -6rem;
+                box-shadow: 0 4px 12px rgba(18, 219, 180, 0.2);">
+        <h1 style="color: white; margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">
+            🧬 Clinical Trial Intelligence Pro
+        </h1>
+        <p style="color: rgba(255, 255, 255, 0.9); margin: 0.5rem 0 0 0; font-size: 1rem;">
+            AI-Powered Portfolio Analytics & Risk Prediction Platform
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Data loading option
-    st.sidebar.markdown("### 📊 Dataset Options")
-    include_all_trials = st.sidebar.checkbox(
-        "Load all trials (8,471)",
-        value=False,
-        help="Include trials without outcome data. Useful for showing full dataset size. Uncheck to only use trials with known outcomes (5,745) for training."
-    )
-    st.sidebar.markdown("---")
+    # ---- TOP NAVIGATION (Horizontal pills style) ----
+    col1, col2, col3 = st.columns([2, 3, 2])
+    
+    with col2:
+        # Main navigation - centered
+        page = st.selectbox(
+            "Navigate to:",
+            [
+                "📊 Overview",
+                "🎯 Risk Predictor",
+                "📤 Upload & Batch Predict",
+                "📁 Portfolio Analyzer",
+                "🔍 Deep Dive Analytics",
+                "📈 Model Performance",
+                "─────────────",
+                "⚡ Real-Time Monitoring 🚀",
+                "🏥 Site Intelligence 🚀",
+                "─────────────",
+                "🎯 Competitive Intelligence 💎",
+                "💰 Financial Calculator 💎",
+                "🔬 Protocol Optimizer 💎",
+                "📤 Export Center",
+                "💎 Pricing"
+            ],
+            label_visibility="collapsed"
+        )
+    
+    with col3:
+        # Dataset settings - right aligned
+        with st.popover("⚙️ Settings", use_container_width=True):
+            include_all_trials = st.checkbox(
+                "Load all 8,471 trials",
+                value=False,
+                help="Include trials without outcome data. Uncheck for only known outcomes (5,745)."
+            )
+            st.markdown("---")
+            st.caption("**Data Sources:**")
+            st.caption("• ClinicalTrials.gov")
+            st.caption("• Your CSV uploads")
+            st.caption("*v2.0 Enterprise*")
+    
+    st.markdown("<div style='margin: 0.5rem 0;'></div>", unsafe_allow_html=True)
     
     # ---- load core data & models ----
     df = load_data(include_all=include_all_trials)
     xgb_model, lgb_model, feature_names = load_models()
-
-    page = st.sidebar.radio("Navigation", [
-        "📊 Overview",
-        "🎯 Risk Predictor",
-        "📤 Upload & Batch Predict",
-        "📁 Portfolio Analyzer",
-        "🔍 Deep Dive Analytics",
-        "📈 Model Performance",
-        "---",
-        "⚡ Real-Time Monitoring 🚀",
-        "🏥 Site Intelligence 🚀",
-        "---",
-        "🎯 Competitive Intelligence 💎",
-        "💰 Financial Calculator 💎",
-        "🔬 Protocol Optimizer 💎",
-        "📤 Export Center",
-        "💎 Pricing"
-    ])
-
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("**Data Sources**")
-    st.sidebar.markdown("• Public benchmark: ClinicalTrials.gov (2 000 trials)")
-    st.sidebar.markdown("• Your data: Upload CSV on the **Upload** page")
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("*v2.0 — Supports proprietary data upload*", unsafe_allow_html=False)
 
     # ====================
     # PAGE 1: OVERVIEW
