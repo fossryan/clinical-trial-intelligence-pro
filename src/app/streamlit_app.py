@@ -960,12 +960,96 @@ def generate_template_csv() -> bytes:
 # MAIN APP
 # ---------------------------------------------------------------------------
 def main():
-    # ---- ENCINITAS BRANDED HEADER ----
-    col_logo, col_title = st.columns([1, 5])
+    # ---- ENCINITA HORIZONTAL NAVBAR ----
+    st.markdown("""
+    <style>
+        /* Navbar container */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            background: white;
+            border-bottom: 2px solid #e0e0e0;
+            margin: -6rem -6rem 2rem -6rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Logo section */
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        /* Navigation links */
+        .navbar-links {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        /* Nav link button style */
+        .nav-link {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #545454;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .nav-link:hover {
+            background: rgba(18, 219, 180, 0.1);
+            color: #12dbb4;
+        }
+        
+        /* Dropdown indicator */
+        .nav-dropdown::after {
+            content: ' ▼';
+            font-size: 0.7rem;
+            margin-left: 0.25rem;
+        }
+        
+        /* Divider */
+        .nav-divider {
+            width: 1px;
+            height: 24px;
+            background: #e0e0e0;
+            margin: 0 0.5rem;
+        }
+        
+        /* Premium badge */
+        .nav-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 10px;
+            margin-left: 0.25rem;
+            font-weight: 700;
+        }
+        
+        .badge-premium {
+            background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%);
+            color: white;
+        }
+        
+        .badge-enterprise {
+            background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%);
+            color: white;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create navbar columns
+    col_logo, col_nav, col_settings = st.columns([1, 6, 1])
     
     with col_logo:
         try:
-            # Try multiple paths for logo (works locally and on Streamlit Cloud)
+            # Try multiple paths for logo
             logo_paths = [
                 "encinitaslogo.png",
                 "/mnt/user-data/outputs/encinitaslogo.png",
@@ -975,123 +1059,116 @@ def main():
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=140)
+                    st.image(logo_path, width=120)
                     logo_loaded = True
                     break
                 except:
                     continue
             
             if not logo_loaded:
-                # Fallback: Show text logo with styling
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
-                            padding: 1rem; 
-                            border-radius: 12px; 
+                            padding: 0.75rem; 
+                            border-radius: 10px; 
                             text-align: center;">
-                    <h2 style="color: white; margin: 0; font-weight: 800; letter-spacing: 0.1em;">E</h2>
+                    <h3 style="color: white; margin: 0; font-weight: 800;">E</h3>
                 </div>
                 """, unsafe_allow_html=True)
-        except Exception as e:
-            # Final fallback
-            st.markdown("### ENCINITAS")
-    
-    with col_title:
-        st.markdown("""
-        <div style="padding-top: 1rem;">
-            <h1 style="color: #12dbb4; margin: 0; font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em;">
-                ENCINITAS
-            </h1>
-            <p style="color: #545454; margin: 0.25rem 0 0 0; font-size: 1.1rem; font-weight: 500;">
-                Clinical Trial Intelligence & Portfolio Analytics Platform
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("<hr style='margin: 1.5rem 0; border: none; height: 2px; background: linear-gradient(90deg, #12dbb4 0%, #14d8e2 50%, transparent 100%);'>", unsafe_allow_html=True)
-    
-    # ---- FEATURE NAVIGATION BAR ----
-    st.markdown("""
-    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); 
-                padding: 1rem 1.5rem; 
-                border-radius: 12px; 
-                border: 2px solid #12dbb4;
-                margin-bottom: 1.5rem;
-                box-shadow: 0 2px 8px rgba(18, 219, 180, 0.1);">
-        <p style="color: #545454; margin: 0 0 0.75rem 0; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">
-            🎯 Key Features Available
-        </p>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                📊 Portfolio Analytics
-            </span>
-            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                🎯 AI Risk Prediction
-            </span>
-            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                📤 Batch Upload & Analysis
-            </span>
-            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                📈 Model Performance Metrics
-            </span>
-            <span style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                🔍 Deep Analytics & Insights
-            </span>
-            <span style="background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                ⚡ Real-Time Monitoring
-            </span>
-            <span style="background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                🏥 Site Intelligence
-            </span>
-            <span style="background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                💎 Competitive Analysis
-            </span>
-            <span style="background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                💰 Financial Modeling
-            </span>
-            <span style="background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%); color: white; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                🔬 Protocol Optimization
-            </span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # ---- PAGE NAVIGATION ----
-    col_nav, col_settings = st.columns([4, 1])
+        except:
+            st.markdown("### Encinita")
     
     with col_nav:
-        page = st.selectbox(
-            "📍 Navigate to Page:",
-            [
-                "📊 Overview",
-                "🎯 Risk Predictor",
-                "📤 Upload & Batch Predict",
-                "📁 Portfolio Analyzer",
-                "🔍 Deep Dive Analytics",
-                "📈 Model Performance",
-                "─────────────",
-                "⚡ Real-Time Monitoring 🚀",
-                "🏥 Site Intelligence 🚀",
-                "─────────────",
-                "🎯 Competitive Intelligence 💎",
-                "💰 Financial Calculator 💎",
-                "🔬 Protocol Optimizer 💎",
-                "📤 Export Center",
-                "💎 Pricing"
-            ]
-        )
+        # Horizontal menu with grouped dropdowns
+        nav_col1, nav_col2, nav_col3, nav_col4, nav_col5 = st.columns([1.5, 1.5, 2, 2, 1])
+        
+        with nav_col1:
+            core_page = st.selectbox(
+                "Core",
+                ["📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
+                label_visibility="collapsed",
+                key="core_nav"
+            )
+        
+        with nav_col2:
+            analytics_page = st.selectbox(
+                "Analytics", 
+                ["🔍 Deep Analytics", "📈 Model Performance"],
+                label_visibility="collapsed",
+                key="analytics_nav"
+            )
+        
+        with nav_col3:
+            enterprise_page = st.selectbox(
+                "Enterprise",
+                ["⚡ Real-Time Monitoring 🚀", "🏥 Site Intelligence 🚀"],
+                label_visibility="collapsed",
+                key="enterprise_nav"
+            )
+        
+        with nav_col4:
+            premium_page = st.selectbox(
+                "Premium",
+                ["🎯 Competitive Intelligence 💎", "💰 Financial Calculator 💎", "🔬 Protocol Optimizer 💎"],
+                label_visibility="collapsed",
+                key="premium_nav"
+            )
+        
+        with nav_col5:
+            other_page = st.selectbox(
+                "More",
+                ["📤 Export Center", "💎 Pricing"],
+                label_visibility="collapsed",
+                key="other_nav"
+            )
     
     with col_settings:
-        with st.popover("⚙️ Settings", use_container_width=True):
+        with st.popover("⚙️", use_container_width=True):
             include_all_trials = st.checkbox(
-                "Load all 8,471 trials",
+                "Load all trials",
                 value=False,
-                help="Include trials without outcome data. Uncheck for only known outcomes (5,745)."
+                help="Include trials without outcome data"
             )
-            st.markdown("---")
             st.caption("**Data Sources:**")
             st.caption("• ClinicalTrials.gov")
-            st.caption("• Your CSV uploads")
-            st.caption("*v2.0 Enterprise*")
+            st.caption("• CSV uploads")
+    
+    # Determine which page was selected (check which dropdown changed)
+    if 'last_page' not in st.session_state:
+        st.session_state.last_page = "📊 Overview"
+    
+    # Priority: check which selectbox was just used
+    current_selections = {
+        "core": core_page,
+        "analytics": analytics_page, 
+        "enterprise": enterprise_page,
+        "premium": premium_page,
+        "other": other_page
+    }
+    
+    # Map short names back to full names for compatibility
+    page_mapping = {
+        "📊 Overview": "📊 Overview",
+        "🎯 Risk Predictor": "🎯 Risk Predictor",
+        "📤 Upload & Batch": "📤 Upload & Batch Predict",
+        "📁 Portfolio Analyzer": "📁 Portfolio Analyzer",
+        "🔍 Deep Analytics": "🔍 Deep Dive Analytics",
+        "📈 Model Performance": "📈 Model Performance",
+        "⚡ Real-Time Monitoring 🚀": "⚡ Real-Time Monitoring 🚀",
+        "🏥 Site Intelligence 🚀": "🏥 Site Intelligence 🚀",
+        "🎯 Competitive Intelligence 💎": "🎯 Competitive Intelligence 💎",
+        "💰 Financial Calculator 💎": "💰 Financial Calculator 💎",
+        "🔬 Protocol Optimizer 💎": "🔬 Protocol Optimizer 💎",
+        "📤 Export Center": "📤 Export Center",
+        "💎 Pricing": "💎 Pricing"
+    }
+    
+    # Select the active page (prefer the one that changed)
+    page = st.session_state.last_page
+    for menu, selection in current_selections.items():
+        if selection != page:
+            page = page_mapping.get(selection, selection)
+            st.session_state.last_page = page
+            break
     
     st.markdown("<div style='margin: 1rem 0;'></div>", unsafe_allow_html=True)
     
@@ -1534,7 +1611,7 @@ def main():
     # ====================
     # PAGE 5: DEEP DIVE  (preserved + therapeutic area filter fix)
     # ====================
-    elif page == "🔍 Deep Dive Analytics":
+    elif page == "🔍 Deep Dive Analytics" or page == "🔍 Deep Analytics":
         st.header("Deep Dive Analytics")
 
         if df is None:
