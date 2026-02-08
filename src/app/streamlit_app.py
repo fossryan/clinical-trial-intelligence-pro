@@ -963,9 +963,16 @@ def main():
     # ---- ENCINITA HORIZONTAL NAVBAR ----
     st.markdown("""
     <style>
-        /* Hide selectbox containers and labels */
+        /* CRITICAL: Remove ALL Streamlit selectbox styling */
+        div[data-testid="stSelectbox"] {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        
         div[data-testid="stSelectbox"] > label {
-            display: none;
+            display: none !important;
         }
         
         div[data-testid="stSelectbox"] > div {
@@ -973,26 +980,47 @@ def main():
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
+            margin: 0 !important;
         }
         
         div[data-testid="stSelectbox"] > div > div {
             background: transparent !important;
             border: none !important;
-            padding: 0.5rem 0.75rem !important;
+            box-shadow: none !important;
+            padding: 0.6rem 1rem !important;
+            margin: 0 !important;
             font-weight: 600 !important;
-            font-size: 0.95rem !important;
+            font-size: 1rem !important;
             color: #545454 !important;
+            line-height: 1.5 !important;
+            min-height: auto !important;
+            height: auto !important;
         }
         
         div[data-testid="stSelectbox"] > div > div:hover {
             background: rgba(18, 219, 180, 0.08) !important;
-            border-radius: 8px;
+            border-radius: 8px !important;
             color: #12dbb4 !important;
         }
         
-        /* Adjust column padding for inline alignment */
+        /* Remove any inherited shadows or borders */
+        [data-baseweb="select"] {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        [data-baseweb="select"] > div {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0.6rem 1rem !important;
+            line-height: 1.5 !important;
+        }
+        
+        /* Adjust column padding for better spacing */
         [data-testid="column"] {
-            padding: 0 0.5rem !important;
+            padding: 0.5rem !important;
         }
         
         /* Settings popover button styling */
@@ -1000,8 +1028,9 @@ def main():
             background: transparent !important;
             border: 1px solid #e0e0e0 !important;
             color: #545454 !important;
-            padding: 0.5rem 1rem !important;
+            padding: 0.6rem 1rem !important;
             border-radius: 8px !important;
+            font-size: 1rem !important;
         }
         
         button[kind="secondary"]:hover {
@@ -1012,22 +1041,21 @@ def main():
     """, unsafe_allow_html=True)
     
     # Navbar with logo and menus in one row
-    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more, col_settings = st.columns([1.2, 1, 1, 1.2, 1.2, 0.8, 0.6])
+    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more, col_settings = st.columns([1.3, 1, 1, 1.3, 1.2, 0.8, 0.6])
     
     with col_logo:
-        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         try:
-            # Try multiple paths for logo
+            # Try multiple paths for logo (JPG version)
             logo_paths = [
-                "encinitalogo.png",
-                "/mnt/user-data/outputs/encinitalogo.png",
-                str(Path(__file__).parent / "encinitalogo.png"),
-                str(Path(__file__).parent.parent.parent / "encinitalogo.png")
+                "encinitalogo.jpg",
+                "/mnt/user-data/outputs/encinitalogo.jpg",
+                str(Path(__file__).parent / "encinitalogo.jpg"),
+                str(Path(__file__).parent.parent.parent / "encinitalogo.jpg")
             ]
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=160)
+                    st.image(logo_path, width=180)
                     logo_loaded = True
                     break
                 except:
@@ -1036,10 +1064,10 @@ def main():
             if not logo_loaded:
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
-                            padding: 0.75rem 1.5rem; 
+                            padding: 1rem 1.5rem; 
                             border-radius: 10px; 
                             text-align: center;">
-                    <h3 style="color: white; margin: 0; font-weight: 800;">ENCINITA</h3>
+                    <h3 style="color: white; margin: 0; font-weight: 800; letter-spacing: 0.1em;">ENCINITA</h3>
                 </div>
                 """, unsafe_allow_html=True)
         except:
@@ -1050,7 +1078,6 @@ def main():
         st.session_state.current_page = "📊 Overview"
     
     with col_core:
-        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         core_page = st.selectbox(
             "Core",
             ["Core ▼", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
@@ -1061,7 +1088,6 @@ def main():
             st.session_state.current_page = core_page
     
     with col_analytics:
-        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         analytics_page = st.selectbox(
             "Analytics", 
             ["Analytics ▼", "🔍 Deep Analytics", "📈 Model Performance"],
@@ -1072,7 +1098,6 @@ def main():
             st.session_state.current_page = analytics_page
     
     with col_enterprise:
-        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         enterprise_page = st.selectbox(
             "Enterprise",
             ["Enterprise ▼", "⚡ Real-Time Monitoring 🚀", "🏥 Site Intelligence 🚀"],
@@ -1083,7 +1108,6 @@ def main():
             st.session_state.current_page = enterprise_page
     
     with col_premium:
-        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         premium_page = st.selectbox(
             "Premium",
             ["Premium ▼", "🎯 Competitive Intelligence 💎", "💰 Financial Calculator 💎", "🔬 Protocol Optimizer 💎"],
@@ -1094,7 +1118,6 @@ def main():
             st.session_state.current_page = premium_page
     
     with col_more:
-        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         other_page = st.selectbox(
             "More",
             ["More ▼", "📤 Export Center", "💎 Pricing"],
@@ -1105,7 +1128,6 @@ def main():
             st.session_state.current_page = other_page
     
     with col_settings:
-        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         with st.popover("⚙️", use_container_width=True):
             include_all_trials = st.checkbox(
                 "Load all trials",
