@@ -983,13 +983,14 @@ def main():
             padding: 0 !important;
             margin: 0 !important;
             overflow: visible !important;
+            width: 100% !important;
         }
         
         div[data-testid="stSelectbox"] > div > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.15rem 0.3rem !important;
+            padding: 0.15rem 0.6rem !important;
             margin: 0 !important;
             font-weight: 600 !important;
             font-size: 1rem !important;
@@ -1000,6 +1001,8 @@ def main():
             overflow: visible !important;
             white-space: nowrap !important;
             text-overflow: clip !important;
+            width: 100% !important;
+            text-align: right !important;
         }
         
         div[data-testid="stSelectbox"] > div > div:hover {
@@ -1014,16 +1017,19 @@ def main():
             border: none !important;
             box-shadow: none !important;
             overflow: visible !important;
+            width: 100% !important;
         }
         
         [data-baseweb="select"] > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.15rem 0.3rem !important;
+            padding: 0.15rem 0.6rem !important;
             line-height: 1.2 !important;
             overflow: visible !important;
             white-space: nowrap !important;
+            width: 100% !important;
+            text-align: right !important;
         }
         
         /* Adjust column padding for tighter layout */
@@ -1116,55 +1122,55 @@ def main():
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         core_page = st.selectbox(
             "Core",
-            ["Core  ▼", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
+            ["Core", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
             index=0,
             key="core_nav"
         )
-        if core_page != "Core  ▼":
+        if core_page != "Core":
             st.session_state.current_page = core_page
     
     with col_analytics:
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         analytics_page = st.selectbox(
             "Analytics", 
-            ["Analytics  ▼", "🔍 Deep Analytics", "📈 Model Performance"],
+            ["Analytics", "🔍 Deep Analytics", "📈 Model Performance"],
             index=0,
             key="analytics_nav"
         )
-        if analytics_page != "Analytics  ▼":
+        if analytics_page != "Analytics":
             st.session_state.current_page = analytics_page
     
     with col_enterprise:
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         enterprise_page = st.selectbox(
             "Enterprise",
-            ["Enterprise  ▼", "⚡ Real-Time Monitoring", "🏥 Site Intelligence"],
+            ["Enterprise", "⚡ Real-Time Monitoring", "🏥 Site Intelligence"],
             index=0,
             key="enterprise_nav"
         )
-        if enterprise_page != "Enterprise  ▼":
+        if enterprise_page != "Enterprise":
             st.session_state.current_page = enterprise_page
     
     with col_premium:
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         premium_page = st.selectbox(
             "Premium",
-            ["Premium  ▼", "🎯 Competitive Intelligence", "💰 Financial Calculator", "🔬 Protocol Optimizer"],
+            ["Premium", "🎯 Competitive Intelligence", "💰 Financial Calculator", "🔬 Protocol Optimizer"],
             index=0,
             key="premium_nav"
         )
-        if premium_page != "Premium  ▼":
+        if premium_page != "Premium":
             st.session_state.current_page = premium_page
     
     with col_more:
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         other_page = st.selectbox(
             "More",
-            ["More  ▼", "📤 Export Center", "💎 Pricing", "ℹ️ About"],
+            ["More", "📤 Export Center", "💎 Pricing", "ℹ️ About"],
             index=0,
             key="other_nav"
         )
-        if other_page != "More  ▼":
+        if other_page != "More":
             st.session_state.current_page = other_page
     
     # Get current page from session state
