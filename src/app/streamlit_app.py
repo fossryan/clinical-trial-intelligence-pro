@@ -885,12 +885,27 @@ def create_sankey_diagram(df):
                    'rgba(20,184,166,0.3)','rgba(239,68,68,0.3)','rgba(20,184,166,0.5)']
 
     fig = go.Figure(data=[go.Sankey(
-        node=dict(pad=15, thickness=20, line=dict(color="black", width=0.5),
-                  label=labels,
-                  color=["#1E3A8A","#14B8A6","#10B981","#14B8A6","#10B981","#EF4444"]),
+        node=dict(
+            pad=15, 
+            thickness=20, 
+            line=dict(color="black", width=0.5),
+            label=labels,
+            color=["#1E3A8A","#14B8A6","#10B981","#14B8A6","#10B981","#EF4444"],
+            hovertemplate='%{label}<br>%{value}<extra></extra>'
+        ),
         link=dict(source=sources, target=targets, value=values, color=colors_link)
     )])
-    fig.update_layout(title_text="Clinical Trial Phase Attrition", font_size=12, height=400)
+    
+    fig.update_layout(
+        title_text="Clinical Trial Phase Attrition",
+        font=dict(
+            family="Inter, system-ui, -apple-system, sans-serif",
+            size=13,
+            color="#545454"
+        ),
+        height=400,
+        margin=dict(l=10, r=10, t=40, b=10)
+    )
     return fig
 
 
@@ -1109,7 +1124,7 @@ def main():
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=115)
+                    st.image(logo_path, width=105)
                     logo_loaded = True
                     break
                 except:
