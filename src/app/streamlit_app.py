@@ -893,7 +893,13 @@ def create_sankey_diagram(df):
             color=["#1E3A8A","#14B8A6","#10B981","#14B8A6","#10B981","#EF4444"],
             hovertemplate='%{label}<br>%{value}<extra></extra>'
         ),
-        link=dict(source=sources, target=targets, value=values, color=colors_link)
+        link=dict(source=sources, target=targets, value=values, color=colors_link),
+        textfont=dict(
+            color="#2d3748",
+            size=13,
+            family="Inter, system-ui, -apple-system, sans-serif"
+        ),
+        valueformat=".0f"
     )])
     
     fig.update_layout(
@@ -901,11 +907,20 @@ def create_sankey_diagram(df):
         font=dict(
             family="Inter, system-ui, -apple-system, sans-serif",
             size=13,
-            color="#545454"
+            color="#2d3748"
         ),
         height=400,
-        margin=dict(l=10, r=10, t=40, b=10)
+        margin=dict(l=10, r=10, t=40, b=10),
+        paper_bgcolor='white',
+        plot_bgcolor='white'
     )
+    
+    # Add custom config to disable text outline
+    config = {
+        'displayModeBar': False,
+        'staticPlot': False
+    }
+    
     return fig
 
 
@@ -1257,6 +1272,29 @@ def main():
         with c1:
             st.plotly_chart(create_success_rate_chart(df), width="stretch")
         with c2:
+            # Add CSS to fix Sankey text rendering (remove stroke/outline)
+            st.markdown("""
+            <style>
+                /* Remove text stroke/outline from Plotly Sankey node labels */
+                .js-plotly-plot .sankey text {
+                    stroke: none !important;
+                    stroke-width: 0 !important;
+                    paint-order: stroke !important;
+                    fill: #2d3748 !important;
+                    font-family: Inter, system-ui, -apple-system, sans-serif !important;
+                    font-size: 13px !important;
+                    font-weight: 500 !important;
+                }
+                
+                /* Ensure no text shadow or multiple layers */
+                .js-plotly-plot .sankey .sankey-node text,
+                .js-plotly-plot .sankey-node-label {
+                    text-shadow: none !important;
+                    stroke: none !important;
+                    stroke-width: 0 !important;
+                }
+            </style>
+            """, unsafe_allow_html=True)
             st.plotly_chart(create_sankey_diagram(df), width="stretch")
 
         # Sponsor benchmark
