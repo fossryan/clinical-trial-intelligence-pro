@@ -1034,11 +1034,11 @@ def main():
     """, unsafe_allow_html=True)
     
     # Navbar with logo and menus in one row (removed settings column)
-    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more = st.columns([1.5, 1.5, 1.5, 2, 2, 1.2])
+    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more = st.columns([1.3, 1.5, 1.5, 2, 2, 1.2])
     
     with col_logo:
         try:
-            # Try multiple paths for logo (PNG version, larger size)
+            # Try multiple paths for logo (PNG version, 25% smaller)
             logo_paths = [
                 "encinitalogo.png",
                 "/mnt/user-data/outputs/encinitalogo.png",
@@ -1048,7 +1048,7 @@ def main():
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=180)  # Increased from 140 to 180
+                    st.image(logo_path, width=135)  # 25% smaller: 180 -> 135
                     logo_loaded = True
                     break
                 except:
@@ -1070,7 +1070,10 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "📊 Overview"
     
+    # Add padding to vertically center-align dropdowns with logo center
+    # Logo is ~45px tall, so add 0.8rem top padding to center text
     with col_core:
+        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
         core_page = st.selectbox(
             "Core",
             ["Core", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
@@ -1081,6 +1084,7 @@ def main():
             st.session_state.current_page = core_page
     
     with col_analytics:
+        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
         analytics_page = st.selectbox(
             "Analytics", 
             ["Analytics", "🔍 Deep Analytics", "📈 Model Performance"],
@@ -1091,6 +1095,7 @@ def main():
             st.session_state.current_page = analytics_page
     
     with col_enterprise:
+        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
         enterprise_page = st.selectbox(
             "Enterprise",
             ["Enterprise", "⚡ Real-Time Monitoring", "🏥 Site Intelligence"],
@@ -1101,6 +1106,7 @@ def main():
             st.session_state.current_page = enterprise_page
     
     with col_premium:
+        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
         premium_page = st.selectbox(
             "Premium",
             ["Premium", "🎯 Competitive Intelligence", "💰 Financial Calculator", "🔬 Protocol Optimizer"],
@@ -1111,6 +1117,7 @@ def main():
             st.session_state.current_page = premium_page
     
     with col_more:
+        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
         other_page = st.selectbox(
             "More",
             ["More", "📤 Export Center", "💎 Pricing"],
