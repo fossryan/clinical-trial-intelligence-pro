@@ -989,13 +989,13 @@ def main():
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.7rem 1.2rem !important;
+            padding: 0.25rem 0.4rem !important;
             margin: 0 !important;
             font-weight: 600 !important;
             font-size: 1rem !important;
             color: #545454 !important;
-            line-height: 1.6 !important;
-            min-height: 40px !important;
+            line-height: 1.3 !important;
+            min-height: 32px !important;
             height: auto !important;
             overflow: visible !important;
             white-space: nowrap !important;
@@ -1020,25 +1020,25 @@ def main():
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.7rem 1.2rem !important;
-            line-height: 1.6 !important;
+            padding: 0.25rem 0.4rem !important;
+            line-height: 1.3 !important;
             overflow: visible !important;
             white-space: nowrap !important;
         }
         
         /* Adjust column padding for better spacing */
         [data-testid="column"] {
-            padding: 0.5rem !important;
+            padding: 0.2rem !important;
         }
     </style>
     """, unsafe_allow_html=True)
     
     # Navbar with logo and menus in one row (removed settings column)
-    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more = st.columns([0.8, 1.5, 1.5, 2, 2, 1.2])
+    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more = st.columns([1.5, 1.5, 1.5, 2, 2, 1.2])
     
     with col_logo:
         try:
-            # Try multiple paths for logo (PNG version, smaller size)
+            # Try multiple paths for logo (PNG version, larger size)
             logo_paths = [
                 "encinitalogo.png",
                 "/mnt/user-data/outputs/encinitalogo.png",
@@ -1048,7 +1048,7 @@ def main():
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=90)  # Half size: 180 -> 90
+                    st.image(logo_path, width=180)  # Increased from 140 to 180
                     logo_loaded = True
                     break
                 except:
@@ -1060,7 +1060,7 @@ def main():
                             padding: 0.5rem 1rem; 
                             border-radius: 8px; 
                             text-align: center;">
-                    <p style="color: white; margin: 0; font-weight: 800; font-size: 0.9rem;">ENCINITA</p>
+                    <p style="color: white; margin: 0; font-weight: 800; font-size: 1rem;">ENCINITA</p>
                 </div>
                 """, unsafe_allow_html=True)
         except:
