@@ -1037,6 +1037,29 @@ def main():
     col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more = st.columns([1.3, 1.5, 1.5, 2, 2, 1.2])
     
     with col_logo:
+        # Add CSS to prevent logo cutoff
+        st.markdown("""
+        <style>
+            /* Ensure logo container doesn't clip content */
+            [data-testid="column"]:first-child {
+                overflow: visible !important;
+            }
+            
+            [data-testid="column"]:first-child > div {
+                overflow: visible !important;
+            }
+            
+            /* Remove any height constraints on logo container */
+            [data-testid="stImage"] {
+                overflow: visible !important;
+            }
+            
+            [data-testid="stImage"] > img {
+                overflow: visible !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
         try:
             # Try multiple paths for logo (SVG version)
             logo_paths = [
@@ -1048,7 +1071,7 @@ def main():
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=100)
+                    st.image(logo_path, width=135)
                     logo_loaded = True
                     break
                 except:
@@ -1058,7 +1081,7 @@ def main():
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
                             padding: 0.4rem 0.8rem; 
-                            border-radius: 0px; 
+                            border-radius: 6px; 
                             text-align: center;">
                     <p style="color: white; margin: 0; font-weight: 800; font-size: 0.95rem;">ENCINITA</p>
                 </div>
