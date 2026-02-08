@@ -963,103 +963,71 @@ def main():
     # ---- ENCINITA HORIZONTAL NAVBAR ----
     st.markdown("""
     <style>
-        /* Navbar container */
-        .navbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 2rem;
-            background: white;
-            border-bottom: 2px solid #e0e0e0;
-            margin: -6rem -6rem 2rem -6rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        /* Hide selectbox containers and labels */
+        div[data-testid="stSelectbox"] > label {
+            display: none;
         }
         
-        /* Logo section */
-        .navbar-logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+        div[data-testid="stSelectbox"] > div {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
         }
         
-        /* Navigation links */
-        .navbar-links {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
+        div[data-testid="stSelectbox"] > div > div {
+            background: transparent !important;
+            border: none !important;
+            padding: 0.5rem 0.75rem !important;
+            font-weight: 600 !important;
+            font-size: 0.95rem !important;
+            color: #545454 !important;
         }
         
-        /* Nav link button style */
-        .nav-link {
-            padding: 0.5rem 1rem;
+        div[data-testid="stSelectbox"] > div > div:hover {
+            background: rgba(18, 219, 180, 0.08) !important;
             border-radius: 8px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            color: #545454;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            white-space: nowrap;
+            color: #12dbb4 !important;
         }
         
-        .nav-link:hover {
-            background: rgba(18, 219, 180, 0.1);
-            color: #12dbb4;
+        /* Adjust column padding for inline alignment */
+        [data-testid="column"] {
+            padding: 0 0.5rem !important;
         }
         
-        /* Dropdown indicator */
-        .nav-dropdown::after {
-            content: ' ▼';
-            font-size: 0.7rem;
-            margin-left: 0.25rem;
+        /* Settings popover button styling */
+        button[kind="secondary"] {
+            background: transparent !important;
+            border: 1px solid #e0e0e0 !important;
+            color: #545454 !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 8px !important;
         }
         
-        /* Divider */
-        .nav-divider {
-            width: 1px;
-            height: 24px;
-            background: #e0e0e0;
-            margin: 0 0.5rem;
-        }
-        
-        /* Premium badge */
-        .nav-badge {
-            font-size: 0.7rem;
-            padding: 0.15rem 0.4rem;
-            border-radius: 10px;
-            margin-left: 0.25rem;
-            font-weight: 700;
-        }
-        
-        .badge-premium {
-            background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%);
-            color: white;
-        }
-        
-        .badge-enterprise {
-            background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%);
-            color: white;
+        button[kind="secondary"]:hover {
+            border-color: #12dbb4 !important;
+            background: rgba(18, 219, 180, 0.05) !important;
         }
     </style>
     """, unsafe_allow_html=True)
     
-    # Create navbar columns
-    col_logo, col_nav, col_settings = st.columns([1, 6, 1])
+    # Navbar with logo and menus in one row
+    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more, col_settings = st.columns([1.2, 1, 1, 1.2, 1.2, 0.8, 0.6])
     
     with col_logo:
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         try:
             # Try multiple paths for logo
             logo_paths = [
-                "encinitaslogo.png",
-                "/mnt/user-data/outputs/encinitaslogo.png",
-                str(Path(__file__).parent / "encinitaslogo.png"),
-                str(Path(__file__).parent.parent.parent / "encinitaslogo.png")
+                "encinitalogo.png",
+                "/mnt/user-data/outputs/encinitalogo.png",
+                str(Path(__file__).parent / "encinitalogo.png"),
+                str(Path(__file__).parent.parent.parent / "encinitalogo.png")
             ]
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=120)
+                    st.image(logo_path, width=160)
                     logo_loaded = True
                     break
                 except:
@@ -1068,60 +1036,76 @@ def main():
             if not logo_loaded:
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
-                            padding: 0.75rem; 
+                            padding: 0.75rem 1.5rem; 
                             border-radius: 10px; 
                             text-align: center;">
-                    <h3 style="color: white; margin: 0; font-weight: 800;">E</h3>
+                    <h3 style="color: white; margin: 0; font-weight: 800;">ENCINITA</h3>
                 </div>
                 """, unsafe_allow_html=True)
         except:
             st.markdown("### Encinita")
     
-    with col_nav:
-        # Horizontal menu with grouped dropdowns
-        nav_col1, nav_col2, nav_col3, nav_col4, nav_col5 = st.columns([1.5, 1.5, 2, 2, 1])
-        
-        with nav_col1:
-            core_page = st.selectbox(
-                "Core",
-                ["📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
-                label_visibility="collapsed",
-                key="core_nav"
-            )
-        
-        with nav_col2:
-            analytics_page = st.selectbox(
-                "Analytics", 
-                ["🔍 Deep Analytics", "📈 Model Performance"],
-                label_visibility="collapsed",
-                key="analytics_nav"
-            )
-        
-        with nav_col3:
-            enterprise_page = st.selectbox(
-                "Enterprise",
-                ["⚡ Real-Time Monitoring 🚀", "🏥 Site Intelligence 🚀"],
-                label_visibility="collapsed",
-                key="enterprise_nav"
-            )
-        
-        with nav_col4:
-            premium_page = st.selectbox(
-                "Premium",
-                ["🎯 Competitive Intelligence 💎", "💰 Financial Calculator 💎", "🔬 Protocol Optimizer 💎"],
-                label_visibility="collapsed",
-                key="premium_nav"
-            )
-        
-        with nav_col5:
-            other_page = st.selectbox(
-                "More",
-                ["📤 Export Center", "💎 Pricing"],
-                label_visibility="collapsed",
-                key="other_nav"
-            )
+    # Initialize session state for default page
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "📊 Overview"
+    
+    with col_core:
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
+        core_page = st.selectbox(
+            "Core",
+            ["Core ▼", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
+            index=0,
+            key="core_nav"
+        )
+        if core_page != "Core ▼":
+            st.session_state.current_page = core_page
+    
+    with col_analytics:
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
+        analytics_page = st.selectbox(
+            "Analytics", 
+            ["Analytics ▼", "🔍 Deep Analytics", "📈 Model Performance"],
+            index=0,
+            key="analytics_nav"
+        )
+        if analytics_page != "Analytics ▼":
+            st.session_state.current_page = analytics_page
+    
+    with col_enterprise:
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
+        enterprise_page = st.selectbox(
+            "Enterprise",
+            ["Enterprise ▼", "⚡ Real-Time Monitoring 🚀", "🏥 Site Intelligence 🚀"],
+            index=0,
+            key="enterprise_nav"
+        )
+        if enterprise_page != "Enterprise ▼":
+            st.session_state.current_page = enterprise_page
+    
+    with col_premium:
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
+        premium_page = st.selectbox(
+            "Premium",
+            ["Premium ▼", "🎯 Competitive Intelligence 💎", "💰 Financial Calculator 💎", "🔬 Protocol Optimizer 💎"],
+            index=0,
+            key="premium_nav"
+        )
+        if premium_page != "Premium ▼":
+            st.session_state.current_page = premium_page
+    
+    with col_more:
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
+        other_page = st.selectbox(
+            "More",
+            ["More ▼", "📤 Export Center", "💎 Pricing"],
+            index=0,
+            key="other_nav"
+        )
+        if other_page != "More ▼":
+            st.session_state.current_page = other_page
     
     with col_settings:
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         with st.popover("⚙️", use_container_width=True):
             include_all_trials = st.checkbox(
                 "Load all trials",
@@ -1132,18 +1116,8 @@ def main():
             st.caption("• ClinicalTrials.gov")
             st.caption("• CSV uploads")
     
-    # Determine which page was selected (check which dropdown changed)
-    if 'last_page' not in st.session_state:
-        st.session_state.last_page = "📊 Overview"
-    
-    # Priority: check which selectbox was just used
-    current_selections = {
-        "core": core_page,
-        "analytics": analytics_page, 
-        "enterprise": enterprise_page,
-        "premium": premium_page,
-        "other": other_page
-    }
+    # Get current page from session state
+    page = st.session_state.current_page
     
     # Map short names back to full names for compatibility
     page_mapping = {
@@ -1162,15 +1136,9 @@ def main():
         "💎 Pricing": "💎 Pricing"
     }
     
-    # Select the active page (prefer the one that changed)
-    page = st.session_state.last_page
-    for menu, selection in current_selections.items():
-        if selection != page:
-            page = page_mapping.get(selection, selection)
-            st.session_state.last_page = page
-            break
+    page = page_mapping.get(page, page)
     
-    st.markdown("<div style='margin: 1rem 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin: 1.5rem 0; border-bottom: 1px solid #e0e0e0;'></div>", unsafe_allow_html=True)
     
     # ---- load core data & models ----
     df = load_data(include_all=include_all_trials)
