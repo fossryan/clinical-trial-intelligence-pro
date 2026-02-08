@@ -963,12 +963,13 @@ def main():
     # ---- ENCINITA HORIZONTAL NAVBAR ----
     st.markdown("""
     <style>
-        /* CRITICAL: Remove ALL Streamlit selectbox styling */
+        /* CRITICAL: Remove ALL Streamlit selectbox styling and ensure full text visibility */
         div[data-testid="stSelectbox"] {
             background: none !important;
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
+            overflow: visible !important;
         }
         
         div[data-testid="stSelectbox"] > label {
@@ -981,20 +982,24 @@ def main():
             box-shadow: none !important;
             padding: 0 !important;
             margin: 0 !important;
+            overflow: visible !important;
         }
         
         div[data-testid="stSelectbox"] > div > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.6rem 1rem !important;
+            padding: 0.7rem 1.2rem !important;
             margin: 0 !important;
             font-weight: 600 !important;
             font-size: 1rem !important;
             color: #545454 !important;
-            line-height: 1.5 !important;
-            min-height: auto !important;
+            line-height: 1.6 !important;
+            min-height: 40px !important;
             height: auto !important;
+            overflow: visible !important;
+            white-space: nowrap !important;
+            text-overflow: clip !important;
         }
         
         div[data-testid="stSelectbox"] > div > div:hover {
@@ -1008,54 +1013,42 @@ def main():
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
+            overflow: visible !important;
         }
         
         [data-baseweb="select"] > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.6rem 1rem !important;
-            line-height: 1.5 !important;
+            padding: 0.7rem 1.2rem !important;
+            line-height: 1.6 !important;
+            overflow: visible !important;
+            white-space: nowrap !important;
         }
         
         /* Adjust column padding for better spacing */
         [data-testid="column"] {
             padding: 0.5rem !important;
         }
-        
-        /* Settings popover button styling */
-        button[kind="secondary"] {
-            background: transparent !important;
-            border: 1px solid #e0e0e0 !important;
-            color: #545454 !important;
-            padding: 0.6rem 1rem !important;
-            border-radius: 8px !important;
-            font-size: 1rem !important;
-        }
-        
-        button[kind="secondary"]:hover {
-            border-color: #12dbb4 !important;
-            background: rgba(18, 219, 180, 0.05) !important;
-        }
     </style>
     """, unsafe_allow_html=True)
     
-    # Navbar with logo and menus in one row
-    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more, col_settings = st.columns([1.3, 1, 1, 1.3, 1.2, 0.8, 0.6])
+    # Navbar with logo and menus in one row (removed settings column)
+    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more = st.columns([0.8, 1.5, 1.5, 2, 2, 1.2])
     
     with col_logo:
         try:
-            # Try multiple paths for logo (JPG version)
+            # Try multiple paths for logo (PNG version, smaller size)
             logo_paths = [
-                "encinitalogo.jpg",
-                "/mnt/user-data/outputs/encinitalogo.jpg",
-                str(Path(__file__).parent / "encinitalogo.jpg"),
-                str(Path(__file__).parent.parent.parent / "encinitalogo.jpg")
+                "encinitalogo.png",
+                "/mnt/user-data/outputs/encinitalogo.png",
+                str(Path(__file__).parent / "encinitalogo.png"),
+                str(Path(__file__).parent.parent.parent / "encinitalogo.png")
             ]
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=180)
+                    st.image(logo_path, width=90)  # Half size: 180 -> 90
                     logo_loaded = True
                     break
                 except:
@@ -1064,14 +1057,14 @@ def main():
             if not logo_loaded:
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
-                            padding: 1rem 1.5rem; 
-                            border-radius: 10px; 
+                            padding: 0.5rem 1rem; 
+                            border-radius: 8px; 
                             text-align: center;">
-                    <h3 style="color: white; margin: 0; font-weight: 800; letter-spacing: 0.1em;">ENCINITA</h3>
+                    <p style="color: white; margin: 0; font-weight: 800; font-size: 0.9rem;">ENCINITA</p>
                 </div>
                 """, unsafe_allow_html=True)
         except:
-            st.markdown("### Encinita")
+            st.markdown("**Encinita**")
     
     # Initialize session state for default page
     if 'current_page' not in st.session_state:
@@ -1080,63 +1073,52 @@ def main():
     with col_core:
         core_page = st.selectbox(
             "Core",
-            ["Core ▼", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
+            ["Core", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
             index=0,
             key="core_nav"
         )
-        if core_page != "Core ▼":
+        if core_page != "Core":
             st.session_state.current_page = core_page
     
     with col_analytics:
         analytics_page = st.selectbox(
             "Analytics", 
-            ["Analytics ▼", "🔍 Deep Analytics", "📈 Model Performance"],
+            ["Analytics", "🔍 Deep Analytics", "📈 Model Performance"],
             index=0,
             key="analytics_nav"
         )
-        if analytics_page != "Analytics ▼":
+        if analytics_page != "Analytics":
             st.session_state.current_page = analytics_page
     
     with col_enterprise:
         enterprise_page = st.selectbox(
             "Enterprise",
-            ["Enterprise ▼", "⚡ Real-Time Monitoring 🚀", "🏥 Site Intelligence 🚀"],
+            ["Enterprise", "⚡ Real-Time Monitoring", "🏥 Site Intelligence"],
             index=0,
             key="enterprise_nav"
         )
-        if enterprise_page != "Enterprise ▼":
+        if enterprise_page != "Enterprise":
             st.session_state.current_page = enterprise_page
     
     with col_premium:
         premium_page = st.selectbox(
             "Premium",
-            ["Premium ▼", "🎯 Competitive Intelligence 💎", "💰 Financial Calculator 💎", "🔬 Protocol Optimizer 💎"],
+            ["Premium", "🎯 Competitive Intelligence", "💰 Financial Calculator", "🔬 Protocol Optimizer"],
             index=0,
             key="premium_nav"
         )
-        if premium_page != "Premium ▼":
+        if premium_page != "Premium":
             st.session_state.current_page = premium_page
     
     with col_more:
         other_page = st.selectbox(
             "More",
-            ["More ▼", "📤 Export Center", "💎 Pricing"],
+            ["More", "📤 Export Center", "💎 Pricing"],
             index=0,
             key="other_nav"
         )
-        if other_page != "More ▼":
+        if other_page != "More":
             st.session_state.current_page = other_page
-    
-    with col_settings:
-        with st.popover("⚙️", use_container_width=True):
-            include_all_trials = st.checkbox(
-                "Load all trials",
-                value=False,
-                help="Include trials without outcome data"
-            )
-            st.caption("**Data Sources:**")
-            st.caption("• ClinicalTrials.gov")
-            st.caption("• CSV uploads")
     
     # Get current page from session state
     page = st.session_state.current_page
@@ -1149,11 +1131,11 @@ def main():
         "📁 Portfolio Analyzer": "📁 Portfolio Analyzer",
         "🔍 Deep Analytics": "🔍 Deep Dive Analytics",
         "📈 Model Performance": "📈 Model Performance",
-        "⚡ Real-Time Monitoring 🚀": "⚡ Real-Time Monitoring 🚀",
-        "🏥 Site Intelligence 🚀": "🏥 Site Intelligence 🚀",
-        "🎯 Competitive Intelligence 💎": "🎯 Competitive Intelligence 💎",
-        "💰 Financial Calculator 💎": "💰 Financial Calculator 💎",
-        "🔬 Protocol Optimizer 💎": "🔬 Protocol Optimizer 💎",
+        "⚡ Real-Time Monitoring": "⚡ Real-Time Monitoring 🚀",
+        "🏥 Site Intelligence": "🏥 Site Intelligence 🚀",
+        "🎯 Competitive Intelligence": "🎯 Competitive Intelligence 💎",
+        "💰 Financial Calculator": "💰 Financial Calculator 💎",
+        "🔬 Protocol Optimizer": "🔬 Protocol Optimizer 💎",
         "📤 Export Center": "📤 Export Center",
         "💎 Pricing": "💎 Pricing"
     }
@@ -1162,8 +1144,8 @@ def main():
     
     st.markdown("<div style='margin: 1.5rem 0; border-bottom: 1px solid #e0e0e0;'></div>", unsafe_allow_html=True)
     
-    # ---- load core data & models ----
-    df = load_data(include_all=include_all_trials)
+    # ---- load core data & models (ALWAYS load all trials) ----
+    df = load_data(include_all=True)  # Always load all trials
     xgb_model, lgb_model, feature_names = load_models()
 
     # ====================
