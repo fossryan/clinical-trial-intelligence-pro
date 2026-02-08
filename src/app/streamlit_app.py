@@ -970,6 +970,7 @@ def main():
             box-shadow: none !important;
             padding: 0 !important;
             overflow: visible !important;
+            width: 100% !important;
         }
         
         div[data-testid="stSelectbox"] > label {
@@ -984,25 +985,30 @@ def main():
             margin: 0 !important;
             overflow: visible !important;
             width: 100% !important;
+            max-width: 100% !important;
         }
         
         div[data-testid="stSelectbox"] > div > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.15rem 0.6rem !important;
+            padding: 0.2rem 0.6rem !important;
             margin: 0 !important;
             font-weight: 600 !important;
             font-size: 1rem !important;
             color: #545454 !important;
             line-height: 1.2 !important;
-            min-height: 28px !important;
-            height: auto !important;
+            min-height: 32px !important;
+            height: 32px !important;
             overflow: visible !important;
             white-space: nowrap !important;
             text-overflow: clip !important;
             width: 100% !important;
+            max-width: 100% !important;
             text-align: right !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
         }
         
         div[data-testid="stSelectbox"] > div > div:hover {
@@ -1024,12 +1030,21 @@ def main():
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.15rem 0.6rem !important;
+            padding: 0.2rem 0.6rem !important;
             line-height: 1.2 !important;
             overflow: visible !important;
             white-space: nowrap !important;
             width: 100% !important;
             text-align: right !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+        }
+        
+        /* Make all columns equal width */
+        [data-testid="column"]:not(:first-child) {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
         }
         
         /* Adjust column padding for tighter layout */
@@ -1048,8 +1063,8 @@ def main():
     # Move cursor back up into the navbar area
     st.markdown("<div style='margin-top: -5.5rem;'></div>", unsafe_allow_html=True)
     
-    # Navbar with logo and menus in one row (removed settings column)
-    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more = st.columns([1.3, 1.5, 1.5, 2, 2, 1.2])
+    # Navbar with logo and menus in one row - ALL MENU COLUMNS EQUAL WIDTH
+    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more = st.columns([1.3, 1.2, 1.2, 1.2, 1.2, 1.2])
     
     with col_logo:
         # Fix logo container clipping and ensure no rounded corners
