@@ -1058,7 +1058,7 @@ def main():
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
                             padding: 0.4rem 0.8rem; 
-                            border-radius: 6px; 
+                            border-radius: 0px; 
                             text-align: center;">
                     <p style="color: white; margin: 0; font-weight: 800; font-size: 0.95rem;">ENCINITA</p>
                 </div>
