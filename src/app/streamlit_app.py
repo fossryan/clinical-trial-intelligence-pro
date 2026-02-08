@@ -1116,55 +1116,55 @@ def main():
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         core_page = st.selectbox(
             "Core",
-            ["Core", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
+            ["Core  ▼", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
             index=0,
             key="core_nav"
         )
-        if core_page != "Core":
+        if core_page != "Core  ▼":
             st.session_state.current_page = core_page
     
     with col_analytics:
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         analytics_page = st.selectbox(
             "Analytics", 
-            ["Analytics", "🔍 Deep Analytics", "📈 Model Performance"],
+            ["Analytics  ▼", "🔍 Deep Analytics", "📈 Model Performance"],
             index=0,
             key="analytics_nav"
         )
-        if analytics_page != "Analytics":
+        if analytics_page != "Analytics  ▼":
             st.session_state.current_page = analytics_page
     
     with col_enterprise:
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         enterprise_page = st.selectbox(
             "Enterprise",
-            ["Enterprise", "⚡ Real-Time Monitoring", "🏥 Site Intelligence"],
+            ["Enterprise  ▼", "⚡ Real-Time Monitoring", "🏥 Site Intelligence"],
             index=0,
             key="enterprise_nav"
         )
-        if enterprise_page != "Enterprise":
+        if enterprise_page != "Enterprise  ▼":
             st.session_state.current_page = enterprise_page
     
     with col_premium:
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         premium_page = st.selectbox(
             "Premium",
-            ["Premium", "🎯 Competitive Intelligence", "💰 Financial Calculator", "🔬 Protocol Optimizer"],
+            ["Premium  ▼", "🎯 Competitive Intelligence", "💰 Financial Calculator", "🔬 Protocol Optimizer"],
             index=0,
             key="premium_nav"
         )
-        if premium_page != "Premium":
+        if premium_page != "Premium  ▼":
             st.session_state.current_page = premium_page
     
     with col_more:
         st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
         other_page = st.selectbox(
             "More",
-            ["More", "📤 Export Center", "💎 Pricing"],
+            ["More  ▼", "📤 Export Center", "💎 Pricing", "ℹ️ About"],
             index=0,
             key="other_nav"
         )
-        if other_page != "More":
+        if other_page != "More  ▼":
             st.session_state.current_page = other_page
     
     # Get current page from session state
@@ -1184,7 +1184,8 @@ def main():
         "💰 Financial Calculator": "💰 Financial Calculator 💎",
         "🔬 Protocol Optimizer": "🔬 Protocol Optimizer 💎",
         "📤 Export Center": "📤 Export Center",
-        "💎 Pricing": "💎 Pricing"
+        "💎 Pricing": "💎 Pricing",
+        "ℹ️ About": "ℹ️ About"
     }
     
     page = page_mapping.get(page, page)
@@ -1808,6 +1809,179 @@ def main():
     
     elif page == "💎 Pricing":
         render_pricing_page()
+    
+    elif page == "ℹ️ About":
+        render_about_page()
+
+
+def render_about_page():
+    """About page explaining all features"""
+    st.header("ℹ️ About Encinita")
+    st.markdown("**AI-Powered Clinical Trial Intelligence & Portfolio Analytics Platform**")
+    
+    st.markdown("---")
+    
+    # Overview
+    st.subheader("Platform Overview")
+    st.markdown("""
+    Encinita leverages machine learning trained on **8,500+ clinical trials** from ClinicalTrials.gov 
+    to predict trial success probability and assess risk across your portfolio. Make data-driven decisions 
+    with 78-84% prediction accuracy.
+    """)
+    
+    st.markdown("---")
+    
+    # Core Features
+    st.subheader("📊 Core Features")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        **🎯 AI Risk Predictor**
+        - Success probability prediction (78-84% accuracy)
+        - Risk score calculation
+        - Indication-specific models
+        - Phase 2/3 trial analysis
+        - Factor contribution breakdown
+        
+        **📤 Batch Upload & Analysis**
+        - CSV batch predictions
+        - Portfolio-wide risk assessment
+        - Automated scoring
+        - Export predictions to CSV
+        """)
+    
+    with col2:
+        st.markdown("""
+        **📁 Portfolio Analyzer**
+        - Multi-trial portfolio management
+        - Risk distribution analysis
+        - Comparative benchmarking
+        - Therapeutic area insights
+        
+        **🔍 Deep Analytics**
+        - Advanced filtering & segmentation
+        - Success rate by phase, indication, sponsor
+        - Interactive visualizations
+        - Custom cohort analysis
+        """)
+    
+    st.markdown("---")
+    
+    # Performance & Data
+    st.subheader("📈 Model Performance")
+    st.markdown("""
+    **Machine Learning Models:**
+    - XGBoost & LightGBM ensemble
+    - Indication-specific models for Oncology, CNS, Cardiovascular, Autoimmune
+    - ROC-AUC: 0.78-0.84
+    - Calibrated probability scores
+    
+    **Training Data:**
+    - 8,471 total trials (Phase 2-3, 2010-2025)
+    - 5,745 trials with known outcomes
+    - ClinicalTrials.gov verified data
+    - Real-world success rates: Phase 2 (45%), Phase 3 (62%)
+    """)
+    
+    st.markdown("---")
+    
+    # Premium Features
+    st.subheader("🚀 Enterprise Features")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        **⚡ Real-Time Monitoring** 🚀
+        - Live trial status tracking
+        - Automated alerts for milestones
+        - Enrollment monitoring
+        - Protocol amendments tracking
+        
+        **🏥 Site Intelligence** 🚀
+        - Site performance prediction
+        - Enrollment velocity forecasting
+        - Geographic optimization
+        - Site selection recommendations
+        """)
+    
+    with col2:
+        st.markdown("""
+        **🎯 Competitive Intelligence** 💎
+        - Competitor pipeline analysis
+        - Market positioning insights
+        - Therapeutic area trends
+        - Strategic benchmarking
+        
+        **💰 Financial Calculator** 💎
+        - NPV & ROI modeling
+        - Cost-benefit analysis
+        - Risk-adjusted valuations
+        - Portfolio optimization
+        """)
+    
+    st.markdown("""
+    **🔬 Protocol Optimizer** 💎
+    - Design recommendations
+    - Enrollment optimization
+    - Endpoint selection guidance
+    - Statistical power analysis
+    """)
+    
+    st.markdown("---")
+    
+    # Use Cases
+    st.subheader("💼 Use Cases")
+    
+    st.markdown("""
+    **Portfolio Managers**
+    - Prioritize trials for funding
+    - Optimize portfolio risk/return
+    - Track performance vs benchmarks
+    
+    **Clinical Operations**
+    - Identify high-risk trials early
+    - Implement mitigation strategies
+    - Monitor trial health metrics
+    
+    **Business Development**
+    - Evaluate acquisition targets
+    - Assess partnership opportunities
+    - Validate deal assumptions
+    
+    **Investors & Analysts**
+    - Due diligence on biotech pipelines
+    - Risk assessment for investments
+    - Portfolio valuation modeling
+    """)
+    
+    st.markdown("---")
+    
+    # Technology
+    st.subheader("🔬 Technology Stack")
+    st.markdown("""
+    - **Machine Learning:** XGBoost, LightGBM, scikit-learn
+    - **Data Processing:** pandas, NumPy
+    - **Visualization:** Plotly, Streamlit
+    - **Data Sources:** ClinicalTrials.gov API
+    - **Deployment:** Streamlit Cloud, Python 3.11+
+    """)
+    
+    st.markdown("---")
+    
+    # Contact
+    st.subheader("📧 Contact & Support")
+    st.markdown("""
+    For enterprise inquiries, custom deployments, or technical support:
+    
+    - **Email:** support@encinita.ai
+    - **Documentation:** docs.encinita.ai
+    - **Status:** status.encinita.ai
+    
+    © 2025 Encinita. All rights reserved.
+    """)
 
 
 def render_pricing_page():
