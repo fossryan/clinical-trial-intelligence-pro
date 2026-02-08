@@ -989,13 +989,13 @@ def main():
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.25rem 0.4rem !important;
+            padding: 0.15rem 0.3rem !important;
             margin: 0 !important;
             font-weight: 600 !important;
             font-size: 1rem !important;
             color: #545454 !important;
-            line-height: 1.3 !important;
-            min-height: 32px !important;
+            line-height: 1.2 !important;
+            min-height: 28px !important;
             height: auto !important;
             overflow: visible !important;
             white-space: nowrap !important;
@@ -1004,7 +1004,7 @@ def main():
         
         div[data-testid="stSelectbox"] > div > div:hover {
             background: rgba(18, 219, 180, 0.08) !important;
-            border-radius: 8px !important;
+            border-radius: 6px !important;
             color: #12dbb4 !important;
         }
         
@@ -1020,15 +1020,15 @@ def main():
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0.25rem 0.4rem !important;
-            line-height: 1.3 !important;
+            padding: 0.15rem 0.3rem !important;
+            line-height: 1.2 !important;
             overflow: visible !important;
             white-space: nowrap !important;
         }
         
-        /* Adjust column padding for better spacing */
+        /* Adjust column padding for tighter layout */
         [data-testid="column"] {
-            padding: 0.2rem !important;
+            padding: 0.1rem !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -1038,17 +1038,17 @@ def main():
     
     with col_logo:
         try:
-            # Try multiple paths for logo (PNG version, 25% smaller)
+            # Try multiple paths for logo (SVG version)
             logo_paths = [
-                "encinitalogo.png",
-                "/mnt/user-data/outputs/encinitalogo.png",
-                str(Path(__file__).parent / "encinitalogo.png"),
-                str(Path(__file__).parent.parent.parent / "encinitalogo.png")
+                "encinitalogo.svg",
+                "/mnt/user-data/outputs/encinitalogo.svg",
+                str(Path(__file__).parent / "encinitalogo.svg"),
+                str(Path(__file__).parent.parent.parent / "encinitalogo.svg")
             ]
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=135)  # 25% smaller: 180 -> 135
+                    st.image(logo_path, width=135)
                     logo_loaded = True
                     break
                 except:
@@ -1057,10 +1057,10 @@ def main():
             if not logo_loaded:
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
-                            padding: 0.5rem 1rem; 
-                            border-radius: 8px; 
+                            padding: 0.4rem 0.8rem; 
+                            border-radius: 6px; 
                             text-align: center;">
-                    <p style="color: white; margin: 0; font-weight: 800; font-size: 1rem;">ENCINITA</p>
+                    <p style="color: white; margin: 0; font-weight: 800; font-size: 0.95rem;">ENCINITA</p>
                 </div>
                 """, unsafe_allow_html=True)
         except:
@@ -1070,10 +1070,9 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "📊 Overview"
     
-    # Add padding to vertically center-align dropdowns with logo center
-    # Logo is ~45px tall, so add 0.8rem top padding to center text
+    # Reduced padding to center-align dropdowns with logo - navbar takes less vertical space
     with col_core:
-        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         core_page = st.selectbox(
             "Core",
             ["Core", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
@@ -1084,7 +1083,7 @@ def main():
             st.session_state.current_page = core_page
     
     with col_analytics:
-        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         analytics_page = st.selectbox(
             "Analytics", 
             ["Analytics", "🔍 Deep Analytics", "📈 Model Performance"],
@@ -1095,7 +1094,7 @@ def main():
             st.session_state.current_page = analytics_page
     
     with col_enterprise:
-        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         enterprise_page = st.selectbox(
             "Enterprise",
             ["Enterprise", "⚡ Real-Time Monitoring", "🏥 Site Intelligence"],
@@ -1106,7 +1105,7 @@ def main():
             st.session_state.current_page = enterprise_page
     
     with col_premium:
-        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         premium_page = st.selectbox(
             "Premium",
             ["Premium", "🎯 Competitive Intelligence", "💰 Financial Calculator", "🔬 Protocol Optimizer"],
@@ -1117,7 +1116,7 @@ def main():
             st.session_state.current_page = premium_page
     
     with col_more:
-        st.markdown("<div style='padding-top: 0.8rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='padding-top: 0.5rem;'></div>", unsafe_allow_html=True)
         other_page = st.selectbox(
             "More",
             ["More", "📤 Export Center", "💎 Pricing"],
@@ -1149,7 +1148,7 @@ def main():
     
     page = page_mapping.get(page, page)
     
-    st.markdown("<div style='margin: 1.5rem 0; border-bottom: 1px solid #e0e0e0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin: 1rem 0; border-bottom: 1px solid #e0e0e0;'></div>", unsafe_allow_html=True)
     
     # ---- load core data & models (ALWAYS load all trials) ----
     df = load_data(include_all=True)  # Always load all trials
