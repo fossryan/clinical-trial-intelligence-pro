@@ -1077,7 +1077,7 @@ def main():
             logo_loaded = False
             for logo_path in logo_paths:
                 try:
-                    st.image(logo_path, width=135)
+                    st.image(logo_path, width=100)
                     logo_loaded = True
                     break
                 except:
