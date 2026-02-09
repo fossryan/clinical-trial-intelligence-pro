@@ -90,14 +90,11 @@ class NetworkUtils:
             age_seconds = (datetime.now() - cached_time).total_seconds()
             
             if age_seconds > self.cache_ttl:
-                logger.info(f"Cache expired for {cache_key[:50]}... (age: {age_seconds:.0f}s)")
                 return None
             
-            logger.info(f"✅ Cache hit for {cache_key[:50]}... (age: {age_seconds:.0f}s)")
             return cached_data.get('data')
         
-        except Exception as e:
-            logger.warning(f"Failed to load cache: {e}")
+        except Exception:
             return None
     
     def _save_to_cache(self, cache_key: str, data: Any):
@@ -116,11 +113,9 @@ class NetworkUtils:
             
             with open(cache_path, 'w') as f:
                 json.dump(cache_data, f, indent=2)
-            
-            logger.debug(f"Cached data for {cache_key[:50]}...")
         
-        except Exception as e:
-            logger.warning(f"Failed to save cache: {e}")
+        except Exception:
+            pass
     
     def _wait_for_rate_limit(self):
         """Ensure we don't exceed rate limit"""
@@ -139,19 +134,7 @@ class NetworkUtils:
         use_cache: bool = True,
         **kwargs
     ) -> Dict:
-        """
-        Make HTTP request with retry logic and caching
-        
-        Args:
-            endpoint: API endpoint path
-            params: Query parameters
-            method: HTTP method (GET, POST, etc.)
-            use_cache: Whether to use cached response
-            **kwargs: Additional arguments for requests
-        
-        Returns:
-            JSON response as dictionary
-        """
+        """Make HTTP request with retry logic and caching"""
         
         # Build full URL
         if endpoint.startswith('http'):
@@ -172,11 +155,7 @@ class NetworkUtils:
         last_error = None
         for attempt in range(self.max_retries):
             try:
-                # Rate limiting
                 self._wait_for_rate_limit()
-                
-                # Make request
-                logger.info(f"API request to {url[:80]}... (attempt {attempt + 1}/{self.max_retries})")
                 
                 response = self.session.request(
                     method=method,
@@ -186,52 +165,39 @@ class NetworkUtils:
                     **kwargs
                 )
                 
-                # Check for rate limiting
                 if response.status_code == 429:
                     retry_after = int(response.headers.get('Retry-After', 60))
-                    logger.warning(f"Rate limited. Retry after {retry_after}s")
-                    
                     if attempt < self.max_retries - 1:
                         time.sleep(retry_after)
                         continue
                 
-                # Raise for HTTP errors
                 response.raise_for_status()
-                
-                # Parse JSON
                 data = response.json()
                 
-                # Cache successful response
                 if method == 'GET':
                     self._save_to_cache(cache_key, data)
                 
-                logger.info(f"✅ Request successful")
                 return data
             
             except requests.exceptions.Timeout as e:
                 last_error = e
-                logger.warning(f"Timeout (attempt {attempt + 1}/{self.max_retries})")
                 if attempt < self.max_retries - 1:
                     sleep_time = min(2 ** attempt, 30)
                     time.sleep(sleep_time)
             
             except requests.exceptions.ConnectionError as e:
                 last_error = e
-                logger.warning(f"Connection error (attempt {attempt + 1}/{self.max_retries})")
                 if attempt < self.max_retries - 1:
                     sleep_time = min(2 ** attempt, 30)
                     time.sleep(sleep_time)
             
             except Exception as e:
                 last_error = e
-                logger.error(f"Request failed: {e}")
                 if attempt < self.max_retries - 1:
                     sleep_time = min(2 ** attempt, 30)
                     time.sleep(sleep_time)
         
-        # All retries failed
         error_msg = f"Failed after {self.max_retries} attempts. Last error: {last_error}"
-        logger.error(error_msg)
         raise NetworkError(error_msg)
     
     def test_connection(self) -> bool:
@@ -241,37 +207,10 @@ class NetworkUtils:
                 "https://clinicaltrials.gov/api/v2/stats",
                 timeout=5
             )
-            
-            if response.status_code == 200:
-                logger.info("✅ Network connection test: SUCCESS")
-                return True
-            else:
-                logger.warning(f"⚠️ Network test: HTTP {response.status_code}")
-                return False
+            return response.status_code == 200
         
-        except Exception as e:
-            logger.error(f"❌ Network test failed: {e}")
+        except Exception:
             return False
-    
-    def clear_cache(self, older_than_days: Optional[int] = None):
-        """Clear cached data"""
-        if not self.cache_enabled or not self.cache_dir.exists():
-            return
-        
-        cleared_count = 0
-        for cache_file in self.cache_dir.glob("*.json"):
-            try:
-                if older_than_days is not None:
-                    age_days = (time.time() - cache_file.stat().st_mtime) / 86400
-                    if age_days < older_than_days:
-                        continue
-                
-                cache_file.unlink()
-                cleared_count += 1
-            except Exception as e:
-                logger.warning(f"Failed to delete cache file: {e}")
-        
-        logger.info(f"Cleared {cleared_count} cache files")
     
     def get_cache_stats(self) -> Dict:
         """Get cache statistics"""
@@ -285,45 +224,5 @@ class NetworkUtils:
             'enabled': True,
             'files': len(cache_files),
             'total_size_kb': total_size / 1024,
-            'cache_dir': str(self.cache_dir),
             'ttl_hours': self.cache_ttl / 3600
         }
-
-
-def test_connection():
-    """Quick test of network connectivity"""
-    utils = NetworkUtils()
-    return utils.test_connection()
-
-
-if __name__ == "__main__":
-    print("Testing Network Utilities...")
-    print("=" * 80)
-    
-    net = NetworkUtils()
-    
-    print("\n1. Testing network connection...")
-    if net.test_connection():
-        print("   ✅ Network is accessible")
-    else:
-        print("   ❌ Network is NOT accessible")
-    
-    print("\n2. Testing API request...")
-    try:
-        response = net.make_request(
-            endpoint="",
-            params={"query.term": "cancer", "pageSize": 5}
-        )
-        total = response.get('totalCount', 0)
-        print(f"   ✅ Successfully fetched data")
-        print(f"   Total studies: {total:,}")
-    except Exception as e:
-        print(f"   ❌ Failed: {e}")
-    
-    print("\n3. Cache statistics...")
-    stats = net.get_cache_stats()
-    print(f"   Files: {stats['files']}")
-    print(f"   Size: {stats['total_size_kb']:.1f} KB")
-    
-    print("\n" + "=" * 80)
-    print("Test complete!")
