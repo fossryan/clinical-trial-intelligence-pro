@@ -38,6 +38,28 @@ try:
 except ImportError:
     NETWORK_UTILS_AVAILABLE = False
 
+# Import payment processing (new)
+try:
+    from app.payments import (
+        render_upgrade_button,
+        render_payment_success_banner,
+        render_billing_portal_link,
+        TIER_PRICES,
+    )
+    PAYMENTS_AVAILABLE = True
+except ImportError:
+    PAYMENTS_AVAILABLE = False
+
+# Import legal (new)
+try:
+    from app.legal import (
+        render_disclaimer_banner,
+        render_footer,
+        handle_legal_page_routing,
+    )
+    LEGAL_AVAILABLE = True
+except ImportError:
+    LEGAL_AVAILABLE = False
 # Import premium features
 try:
     from premium_pages import (
@@ -1011,11 +1033,29 @@ def generate_template_csv() -> bytes:
 # ---------------------------------------------------------------------------
 def main():
     # ====================
+    # LEGAL PAGE ROUTING (NEW) — must run before auth check
+    # ====================
+    if LEGAL_AVAILABLE and handle_legal_page_routing():
+        return
+
+    # ====================
     # AUTHENTICATION CHECK (NEW)
     # ====================
     if AUTH_ENABLED and not auth_manager.is_authenticated():
         auth_manager.render_login_page()
         return
+
+    # ====================
+    # PAYMENT SUCCESS BANNER (NEW)
+    # ====================
+    if PAYMENTS_AVAILABLE:
+        render_payment_success_banner()
+
+    # ====================
+    # DISCLAIMER BANNER (NEW)
+    # ====================
+    if LEGAL_AVAILABLE:
+        render_disclaimer_banner()
     
     # ---- ENCINITA HORIZONTAL NAVBAR ----
     st.markdown("""
@@ -1848,6 +1888,17 @@ def main():
             st.warning("Models not found. Run `train_models.py`.")
             st.stop()
 
+        # Add Model Health Dashboard (NEW)
+        try:
+            from model_monitoring import render_model_health_dashboard
+            
+            with st.expander("🏥 Model Health Dashboard", expanded=False):
+                render_model_health_dashboard()
+            
+            st.markdown("---")
+        except Exception as e:
+            pass  # Silently skip if monitoring not available
+        
         st.markdown("Our predictive models achieve **78%+ accuracy** identifying high-risk trials 18 months before completion.")
 
         # metrics table
@@ -2128,171 +2179,312 @@ def render_about_page():
 
 
 def render_pricing_page():
-    """Pricing page for premium tiers"""
-    st.header("💎 Pricing & Plans")
-    st.markdown("Choose the plan that fits your clinical development needs")
-    
-    # Premium callout
+    """Pricing & Plans page — wired to Stripe for real payment collection."""
+
+    # ----------------------------------------------------------------
+    # Resolve current user context
+    # ----------------------------------------------------------------
+    current_tier  = auth_manager.get_current_tier() if AUTH_ENABLED else "free"
+    current_email = ""
+    if AUTH_ENABLED and auth_manager.is_authenticated():
+        username = st.session_state.get("username", "")
+        try:
+            current_email = auth_manager.users.get(username, {}).get("email", "")
+        except Exception:
+            pass
+
+    # Use app base URL for Stripe success/cancel redirects
+    app_url = st.query_params.get("app_url", "https://your-app.streamlit.app")
+
+    # ----------------------------------------------------------------
+    # Hero
+    # ----------------------------------------------------------------
     st.markdown("""
-    <div style="background-color: #EFF6FF; padding: 1.5rem; border-radius: 0.75rem; border: 2px solid #3B82F6; margin: 1rem 0;">
-        <h3 style="color: #1E3A8A; margin-top: 0;">🚀 Transform Your Clinical Development Strategy</h3>
-        <p>Join leading biotech and pharma companies using AI-powered trial intelligence to reduce risk and optimize portfolios.</p>
-    </div>
+    <style>
+        .price-card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px 24px 24px;
+            border: 2px solid #e2e8f0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .price-card.popular {
+            border-color: #12dbb4;
+            box-shadow: 0 0 0 4px rgba(18,219,180,0.1);
+        }
+        .price-card .badge {
+            background: linear-gradient(90deg,#12dbb4,#14d8e2);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 3px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .price-card h3 { margin: 0 0 4px; color: #1e293b; font-size: 1.25rem; }
+        .price-card .price { font-size: 1.9rem; font-weight: 800; color: #1e293b; margin: 6px 0 2px; }
+        .price-card .price span { font-size: 0.9rem; font-weight: 400; color: #94a3b8; }
+        .price-card .billed { font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px; }
+        .price-card hr { border: none; border-top: 1px solid #f1f5f9; margin: 14px 0; }
+        .price-card ul { padding-left: 0; list-style: none; flex: 1; margin: 0 0 20px; }
+        .price-card ul li { font-size: 0.88rem; color: #475569; padding: 4px 0; }
+        .price-card ul li::before { content: "✓ "; color: #12dbb4; font-weight: 700; }
+        .current-plan-badge {
+            background: #f0fdf4; color: #16a34a; font-weight: 600;
+            font-size: 0.82rem; padding: 6px 12px; border-radius: 8px;
+            text-align: center; border: 1px solid #bbf7d0;
+        }
+    </style>
     """, unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown("""
-        <div style="background-color: #F8FAFC; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #E2E8F0; height: 100%;">
-            <h3 style="color: #64748B;">Free</h3>
-            <h2 style="color: #1E3A8A;">$0<span style="font-size: 1rem; color: #64748B;">/month</span></h2>
-            <hr style="border-color: #E2E8F0;">
-            <p>✅ Basic risk predictions</p>
-            <p>✅ 5 trials/month</p>
-            <p>✅ Public benchmarks</p>
-            <p>✅ CSV upload (limited)</p>
-            <p>✅ Community support</p>
-            <br>
-            <p style="color: #10B981; font-weight: bold;">✓ Current Plan</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        <div style="background-color: #F0FDF4; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #14B8A6; height: 100%;">
-            <h3 style="color: #14B8A6;">Professional</h3>
-            <h2 style="color: #1E3A8A;">$2,083<span style="font-size: 1rem; color: #64748B;">/month</span></h2>
-            <p style="font-size: 0.9rem; color: #64748B;">Billed annually at $25,000</p>
-            <hr style="border-color: #14B8A6;">
-            <p>✅ <strong>Unlimited predictions</strong></p>
-            <p>✅ <strong>Competitive Intel</strong> (3 companies)</p>
-            <p>✅ <strong>Financial Calculator</strong></p>
-            <p>✅ <strong>Real-Time Monitoring</strong> (10 trials)</p>
-            <p>✅ Excel exports</p>
-            <p>✅ Email support</p>
-            <br>
-            <a href="mailto:ryan@yourcompany.com?subject=Professional Tier Inquiry" style="background-color: #14B8A6; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; display: inline-block;">Contact Sales</a>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-        <div style="background-color: #FEF3C7; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #F59E0B; height: 100%;">
-            <h3 style="color: #F59E0B;">Enterprise</h3>
-            <h2 style="color: #1E3A8A;">$6,250<span style="font-size: 1rem; color: #64748B;">/month</span></h2>
-            <p style="font-size: 0.9rem; color: #64748B;">Billed annually at $75,000</p>
-            <hr style="border-color: #F59E0B;">
-            <p>✅ <strong>Everything in Professional</strong></p>
-            <p>✅ <strong>AI Protocol Optimizer</strong></p>
-            <p>✅ <strong>Regulatory Advisor</strong></p>
-            <p>✅ <strong>Indication Recommender</strong></p>
-            <p>✅ PowerPoint/PDF reports</p>
-            <p>✅ Priority support</p>
-            <p>✅ Quarterly business reviews</p>
-            <br>
-            <a href="mailto:ryan@yourcompany.com?subject=Enterprise Tier Inquiry" style="background-color: #F59E0B; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; display: inline-block;">Contact Sales</a>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown("""
-        <div style="background-color: #EFF6FF; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #3B82F6; height: 100%;">
-            <h3 style="color: #3B82F6;">Enterprise+</h3>
-            <h2 style="color: #1E3A8A;">$12,500<span style="font-size: 1rem; color: #64748B;">/month</span></h2>
-            <p style="font-size: 0.9rem; color: #64748B;">Billed annually at $150,000</p>
-            <hr style="border-color: #3B82F6;">
-            <p>✅ <strong>Everything in Enterprise</strong></p>
-            <p>✅ <strong>API Access</strong> (1M requests)</p>
-            <p>✅ <strong>Custom Models</strong></p>
-            <p>✅ <strong>White-label option</strong></p>
-            <p>✅ Dedicated CSM</p>
-            <p>✅ 20 hours consultation</p>
-            <p>✅ Custom integrations</p>
-            <br>
-            <a href="mailto:ryan@yourcompany.com?subject=Enterprise+ Tier Inquiry" style="background-color: #3B82F6; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; display: inline-block;">Contact Sales</a>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Value proposition
+
+    st.markdown("## 💎 Pricing & Plans")
+    st.markdown("Transparent pricing for every stage of clinical development.")
+
     st.markdown("---")
-    st.subheader("Why Clinical Trial Intelligence?")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
+
+    col_free, col_pro, col_ent, col_plus = st.columns(4)
+
+    # ----------------------------------------------------------------
+    # FREE
+    # ----------------------------------------------------------------
+    with col_free:
         st.markdown("""
-        ### 🎯 Predictive, Not Descriptive
-        Unlike competitors who just track trials, we predict outcomes 18 months in advance using AI trained on 2,000+ studies.
-        """)
-    
-    with col2:
+        <div class="price-card">
+            <h3>Free</h3>
+            <div class="price">$0<span> / mo</span></div>
+            <div class="billed">Forever free</div>
+            <hr>
+            <ul>
+                <li>5 predictions / month</li>
+                <li>Public benchmark data</li>
+                <li>Basic risk scores</li>
+                <li>CSV upload (limited)</li>
+                <li>Community support</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if current_tier == "free":
+            st.markdown('<div class="current-plan-badge">✓ Your current plan</div>', unsafe_allow_html=True)
+
+    # ----------------------------------------------------------------
+    # PROFESSIONAL
+    # ----------------------------------------------------------------
+    with col_pro:
         st.markdown("""
-        ### 💰 Proven ROI
-        Average Phase 2 costs $13M. If we help avoid one failure, that's a 500X return on Professional tier investment.
-        """)
-    
-    with col3:
+        <div class="price-card popular">
+            <div class="badge">MOST POPULAR</div>
+            <h3>Professional</h3>
+            <div class="price">$2,083<span> / mo</span></div>
+            <div class="billed">Billed annually · $25,000 / yr</div>
+            <hr>
+            <ul>
+                <li>Unlimited predictions</li>
+                <li>Competitive Intel (3 co.)</li>
+                <li>Financial Calculator</li>
+                <li>Real-Time Monitoring (10)</li>
+                <li>Excel exports</li>
+                <li>Email support</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if current_tier == "professional":
+            st.markdown('<div class="current-plan-badge">✓ Your current plan</div>', unsafe_allow_html=True)
+        elif current_tier == "free":
+            if PAYMENTS_AVAILABLE:
+                render_upgrade_button("professional", current_email, app_url)
+            else:
+                st.markdown(
+                    '<a href="mailto:sales@encinitas.ai?subject=Professional%20Tier%20Inquiry" '
+                    'style="background:linear-gradient(90deg,#12dbb4,#14d8e2);color:white;'
+                    'padding:10px 18px;border-radius:8px;text-decoration:none;'
+                    'font-weight:600;display:block;text-align:center;font-size:0.9rem;">'
+                    'Contact Sales</a>',
+                    unsafe_allow_html=True,
+                )
+
+    # ----------------------------------------------------------------
+    # ENTERPRISE
+    # ----------------------------------------------------------------
+    with col_ent:
         st.markdown("""
-        ### ⚡ Real-Time Intelligence
-        Get instant insights vs. waiting weeks for consultant reports or quarterly database updates.
-        """)
-    
+        <div class="price-card">
+            <h3>Enterprise</h3>
+            <div class="price">$6,250<span> / mo</span></div>
+            <div class="billed">Billed annually · $75,000 / yr</div>
+            <hr>
+            <ul>
+                <li>Everything in Professional</li>
+                <li>AI Protocol Optimizer</li>
+                <li>Regulatory Advisor</li>
+                <li>Competitive Intel (10 co.)</li>
+                <li>PowerPoint / PDF exports</li>
+                <li>Priority support</li>
+                <li>Quarterly business reviews</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if current_tier == "enterprise":
+            st.markdown('<div class="current-plan-badge">✓ Your current plan</div>', unsafe_allow_html=True)
+        elif current_tier in ("free", "professional"):
+            if PAYMENTS_AVAILABLE:
+                render_upgrade_button("enterprise", current_email, app_url)
+            else:
+                st.markdown(
+                    '<a href="mailto:sales@encinitas.ai?subject=Enterprise%20Tier%20Inquiry" '
+                    'style="background:linear-gradient(90deg,#12dbb4,#14d8e2);color:white;'
+                    'padding:10px 18px;border-radius:8px;text-decoration:none;'
+                    'font-weight:600;display:block;text-align:center;font-size:0.9rem;">'
+                    'Contact Sales</a>',
+                    unsafe_allow_html=True,
+                )
+
+    # ----------------------------------------------------------------
+    # ENTERPRISE+
+    # ----------------------------------------------------------------
+    with col_plus:
+        st.markdown("""
+        <div class="price-card">
+            <h3>Enterprise+</h3>
+            <div class="price">$12,500<span> / mo</span></div>
+            <div class="billed">Billed annually · $150,000 / yr</div>
+            <hr>
+            <ul>
+                <li>Everything in Enterprise</li>
+                <li>API access (1 M req / mo)</li>
+                <li>Custom model training</li>
+                <li>White-label option</li>
+                <li>Dedicated CSM</li>
+                <li>20 hrs expert consultation</li>
+                <li>Custom integrations</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if current_tier == "enterprise_plus":
+            st.markdown('<div class="current-plan-badge">✓ Your current plan</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(
+                '<a href="mailto:sales@encinitas.ai?subject=Enterprise%2B%20Tier%20Inquiry" '
+                'style="background:linear-gradient(90deg,#12dbb4,#14d8e2);color:white;'
+                'padding:10px 18px;border-radius:8px;text-decoration:none;'
+                'font-weight:600;display:block;text-align:center;font-size:0.9rem;">'
+                'Contact Sales</a>',
+                unsafe_allow_html=True,
+            )
+
+    # ----------------------------------------------------------------
+    # Billing portal link for paid users
+    # ----------------------------------------------------------------
+    if current_tier not in ("free",) and PAYMENTS_AVAILABLE:
+        st.markdown("---")
+        st.markdown("**Manage your subscription:**")
+        customer_id = ""
+        if AUTH_ENABLED and auth_manager.is_authenticated():
+            username = st.session_state.get("username", "")
+            try:
+                customer_id = auth_manager.users.get(username, {}).get("stripe_customer_id", "")
+            except Exception:
+                pass
+        if customer_id:
+            render_billing_portal_link(customer_id, app_url)
+        else:
+            st.caption("Contact sales@encinitas.ai to manage your billing.")
+
+    # ----------------------------------------------------------------
+    # Stripe setup notice (shown when keys not yet configured)
+    # ----------------------------------------------------------------
+    if not PAYMENTS_AVAILABLE:
+        st.info(
+            "💳 **Payment collection is ready — Stripe keys not yet configured.**  \n"
+            "Add your keys to `.streamlit/secrets.toml` under `[stripe]` to activate "
+            "one-click upgrades. See `STRIPE_SETUP.md` for instructions.",
+            icon="ℹ️",
+        )
+
+    # ----------------------------------------------------------------
+    # ROI & Value Props
+    # ----------------------------------------------------------------
+    st.markdown("---")
+    st.markdown("### Why Encinitas?")
+    r1, r2, r3 = st.columns(3)
+    with r1:
+        st.markdown("**🎯 Predictive, not descriptive**  \nPredict outcomes 18 months before completion — not just track what already happened.")
+    with r2:
+        st.markdown("**💰 Proven ROI**  \nAverage Phase 2 costs $13 M. Avoiding one failure pays for 500× the Professional tier.")
+    with r3:
+        st.markdown("**⚡ Real-time intelligence**  \nInstant AI insights vs. weeks waiting for consultant reports or quarterly database updates.")
+
+    # ----------------------------------------------------------------
     # FAQ
+    # ----------------------------------------------------------------
     st.markdown("---")
-    st.subheader("Frequently Asked Questions")
-    
-    with st.expander("Can I try before buying?"):
+    st.markdown("### Frequently Asked Questions")
+
+    with st.expander("How is pricing structured?"):
+        st.markdown("All plans are billed annually. We don't offer monthly billing at this time. Contact sales for multi-year discounts.")
+
+    with st.expander("What kind of companies use Encinitas?"):
         st.markdown("""
-        Yes! The free tier gives you 5 predictions/month to test the platform. 
-        We also offer 90-day pilots for Professional tier at 50% off for qualified customers.
+        - **Biotech companies** (Series B → IPO) managing 3–20 active trials
+        - **Pharma portfolio teams** allocating R&D budget across indications
+        - **Investment firms** (VCs, crossover funds) running clinical due diligence
+        - **CROs and consultants** differentiating with AI-powered deliverables
         """)
-    
-    with st.expander("What kind of companies use this?"):
-        st.markdown("""
-        Our customers include:
-        - **Biotech companies** (Series B-IPO) managing 3-20 trials
-        - **Pharma divisions** optimizing portfolio allocation
-        - **Investment firms** (VCs, hedge funds) for due diligence
-        - **CROs and consultants** differentiating their services
-        """)
-    
+
     with st.expander("How accurate are the predictions?"):
         st.markdown("""
-        Our models achieve **78%+ accuracy** in predicting trial outcomes, trained on:
-        - 2,000+ Phase 2-3 interventional trials
-        - 50+ predictive features per trial
-        - Historical data from ClinicalTrials.gov
-        - Validated using cross-validation and out-of-sample testing
+        Our LightGBM model achieves **87.4 % accuracy / 92.4 % F1 / 80.8 % ROC-AUC** on held-out data,
+        trained on 8,471 Phase 2–3 interventional trials from ClinicalTrials.gov.
+        Predictions are probabilistic; they do not guarantee individual trial outcomes.
         """)
-    
+
     with st.expander("Can you integrate with our existing systems?"):
+        st.markdown("Enterprise+ includes a REST API, Veeva/Medidata connectors, white-label deployment, and SSO.")
+
+    with st.expander("What support is included?"):
         st.markdown("""
-        Yes! Enterprise+ tier includes:
-        - REST API for programmatic access
-        - Custom integrations with Veeva, Medidata, etc.
-        - White-label deployment options
-        - SSO and security compliance
-        """)
-    
-    with st.expander("What's included in customer support?"):
-        st.markdown("""
-        - **Free tier:** Community forum access
-        - **Professional:** Email support (48-hour response)
+        - **Free:** Community forum
+        - **Professional:** Email support (48 h SLA)
         - **Enterprise:** Priority email + monthly check-ins
-        - **Enterprise+:** Dedicated customer success manager + 20 hours expert consultation
+        - **Enterprise+:** Dedicated CSM + 20 h expert consultation / year
         """)
-    
+
+    # ----------------------------------------------------------------
     # CTA
+    # ----------------------------------------------------------------
     st.markdown("---")
     st.markdown("""
-    <div style="background-color: #14B8A6; color: white; padding: 2rem; border-radius: 0.75rem; text-align: center;">
-        <h2 style="color: white; margin-top: 0;">Ready to reduce trial risk?</h2>
-        <p style="font-size: 1.2rem;">Schedule a personalized demo to see how we can optimize your clinical development portfolio.</p>
-        <a href="mailto:ryan@yourcompany.com?subject=Demo Request" style="background-color: white; color: #14B8A6; padding: 1rem 2rem; border-radius: 0.5rem; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 1rem;">Schedule Demo</a>
+    <div style="background:linear-gradient(90deg,#12dbb4,#14d8e2);color:white;
+                padding:2rem;border-radius:16px;text-align:center;">
+        <h2 style="color:white;margin-top:0;">Ready to reduce trial risk?</h2>
+        <p style="font-size:1.1rem;margin-bottom:1.5rem;">
+            Schedule a personalised demo and see how Encinitas can optimise your clinical portfolio.
+        </p>
+        <a href="mailto:sales@encinitas.ai?subject=Demo%20Request"
+           style="background:white;color:#12dbb4;padding:12px 28px;
+                  border-radius:8px;text-decoration:none;font-weight:700;
+                  font-size:1rem;display:inline-block;">
+            Schedule a Demo
+        </a>
     </div>
     """, unsafe_allow_html=True)
+    
+
+# ====================
+# LEGAL FOOTER rendered outside main() so it always appears last
+# ====================
+def _render_app():
+    main()
+    if LEGAL_AVAILABLE:
+        render_footer()
 
 
 if __name__ == '__main__':
-    main()
+    _render_app()
