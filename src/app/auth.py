@@ -190,123 +190,172 @@ class AuthManager:
         return current_usage < limit
     
     def render_login_page(self):
-        """Render Encinitas login page — everything in one st.markdown call."""
-        import base64, hashlib
+        """Render Encinitas login page with SVG logo and brand styling"""
 
-        # ── Logo ─────────────────────────────────────────────────────────
-        logo_path = Path(__file__).parent / "encinitalogo.png"
-        logo_src = ""
-        if logo_path.exists():
-            with open(logo_path, "rb") as fh:
-                logo_src = "data:image/png;base64," + base64.b64encode(fh.read()).decode()
+        # Inline SVG logo – avoids any file-path issues
+        SVG_LOGO = """<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 532.01 385.6"
+            style="width:220px;height:auto;display:block;margin:0 auto 8px;">
+          <defs>
+            <linearGradient id="lg1" x1="0" y1="346.12" x2="532.01" y2="346.12" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#55c1a8"/><stop offset="1" stop-color="#4ec5d4"/>
+            </linearGradient>
+            <linearGradient id="lg2" x1="164.44" y1="125.79" x2="339.12" y2="125.79"
+              gradientTransform="translate(185.2 -134.72) rotate(45)" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#55c1a8"/><stop offset="1" stop-color="#4ec5d4"/>
+            </linearGradient>
+          </defs>
+          <g>
+            <path fill="url(#lg1)" d="M0,375.9v-59.55c0-4.69,3.71-8.4,8.4-8.4h42.32c4.14,0,7.53,3.38,7.53,7.53s-3.38,7.42-7.53,7.42H16.69v15.49h29.12c4.14,0,7.53,3.38,7.53,7.53s-3.38,7.42-7.53,7.42h-29.12v16.03h34.58c4.14,0,7.53,3.38,7.53,7.53s-3.38,7.42-7.53,7.42H8.4c-4.69,0-8.4-3.71-8.4-8.4Z"/>
+            <path fill="url(#lg1)" d="M73.07,315.91c0-4.69,3.71-8.4,8.4-8.4h1.75c4.04,0,6.44,1.96,8.73,4.91l32.39,42.54v-39.37c0-4.58,3.71-8.29,8.29-8.29s8.29,3.71,8.29,8.29v60.75c0,4.69-3.71,8.4-8.4,8.4h-.55c-4.04,0-6.44-1.96-8.73-4.91l-33.59-44.06v40.9c0,4.58-3.71,8.29-8.29,8.29s-8.29-3.71-8.29-8.29v-60.75Z"/>
+            <path fill="url(#lg1)" d="M155.85,346.34v-.22c0-21.7,16.36-39.48,39.81-39.48,11.45,0,19.2,3.05,25.52,7.74,1.75,1.31,3.27,3.71,3.27,6.65,0,4.58-3.71,8.18-8.29,8.18-2.29,0-3.82-.87-5.02-1.64-4.69-3.49-9.6-5.45-15.6-5.45-12.87,0-22.14,10.69-22.14,23.78v.22c0,13.09,9.05,24,22.14,24,7.09,0,11.78-2.18,16.58-6,1.31-1.09,3.05-1.85,5.02-1.85,4.25,0,7.85,3.49,7.85,7.74,0,2.62-1.31,4.69-2.84,6-6.87,6-14.94,9.6-27.16,9.6-22.47,0-39.16-17.34-39.16-39.26Z"/>
+            <path fill="url(#lg1)" d="M240.48,315.69c0-4.69,3.71-8.4,8.4-8.4s8.4,3.71,8.4,8.4v60.86c0,4.69-3.71,8.4-8.4,8.4s-8.4-3.71-8.4-8.4v-60.86Z"/>
+            <path fill="url(#lg1)" d="M276.36,315.91c0-4.69,3.71-8.4,8.4-8.4h1.75c4.04,0,6.43,1.96,8.73,4.91l32.39,42.54v-39.37c0-4.58,3.71-8.29,8.29-8.29s8.29,3.71,8.29,8.29v60.75c0,4.69-3.71,8.4-8.4,8.4h-.54c-4.04,0-6.44-1.96-8.73-4.91l-33.59-44.06v40.9c0,4.58-3.71,8.29-8.29,8.29s-8.29-3.71-8.29-8.29v-60.75Z"/>
+            <path fill="url(#lg1)" d="M363.29,315.69c0-4.69,3.71-8.4,8.4-8.4s8.4,3.71,8.4,8.4v60.86c0,4.69-3.71,8.4-8.4,8.4s-8.4-3.71-8.4-8.4v-60.86Z"/>
+            <path fill="url(#lg1)" d="M416.95,323.43h-16.14c-4.25,0-7.74-3.49-7.74-7.74s3.49-7.74,7.74-7.74h49.08c4.25,0,7.74,3.49,7.74,7.74s-3.49,7.74-7.74,7.74h-16.14v53.12c0,4.69-3.71,8.4-8.4,8.4s-8.4-3.71-8.4-8.4v-53.12Z"/>
+            <path fill="url(#lg1)" d="M457.41,373.5l26.61-60.1c1.85-4.14,5.24-6.65,9.82-6.65h.98c4.58,0,7.85,2.51,9.71,6.65l26.61,60.1c.54,1.2.87,2.29.87,3.38,0,4.47-3.49,8.07-7.96,8.07-3.93,0-6.54-2.29-8.07-5.78l-5.13-12h-33.59l-5.34,12.54c-1.42,3.27-4.25,5.24-7.74,5.24-4.36,0-7.74-3.49-7.74-7.85,0-1.2.44-2.4.98-3.6ZM504.63,352.34l-10.58-25.2-10.58,25.2h21.16Z"/>
+          </g>
+          <g>
+            <path fill="url(#lg2)" d="M331.59,162.22c9.94,4.03,12.51,17.84,8.41,26.13-5.17,10.46-17.4,15.4-27.92,10.73-8-3.55-12.54-14.6-9.25-24.03,3.58-10.25,15.3-18.29,28.75-12.83Z"/>
+            <path fill="url(#lg2)" d="M250.57,261.5c13.95-3.85,27.46-10.97,39.24-21.57,1.55-1.4,2.7-3.01,3.68-4.7l5.8-6.06c7.96-8.07,8.88-21.15,2.88-28.08-7.57-8.74-21.52-8.47-30.6.56l-9.57,9.52c-7.69,6.37-16.3,10.42-24.98,12.2-14.69,2.72-29.48-1.23-39.9-11.44-15.79-15.49-19.19-43.7-2.11-64.19,9.64-11.57,20.59-21.91,31.46-32.27l46.22,45.6c4.14,4.07,9.98,5.79,15.63,5.47.51-.01,1.01-.05,1.52-.1.45-.06.89-.13,1.34-.21,4.82-.78,9.49-3.13,13.08-7.19,6.55-7.41,6.62-20.45-.74-27.94l-46.31-46.94,28.8-28.5c20.3-20.09,51.89-19.39,68.68-1.59,16.59,17.59,16.3,45.37-1.07,66.36l-9.52,9.57c-9.03,9.08-9.3,23.03-.56,30.6,6.93,6,20,5.08,28.08-2.88l9.37-8.97c.53-.47,1.17-1.19,1.65-1.74,33.31-37.64,33.19-90.04,1.53-122.11-29.51-29.9-82.72-35.37-119.91-2.51l-.2-.24c-35.06,30.33-67.41,63.9-99,98.34-34.16,37.24-28.84,91.38,1.41,121.24,20.66,20.39,49.74,27.61,77.88,21.33.34-.07.67-.17,1.01-.24,1.73-.41,3.47-.79,5.19-1.31Z"/>
+          </g>
+        </svg>"""
 
-        # ── Handle form submission via query params ───────────────────────
-        # The HTML form POSTs to Streamlit by setting ?_login=1&u=...&p=...
-        # We read those params here and authenticate before rendering.
-        params = st.query_params
-        if params.get("_login") == "1":
-            u = params.get("u", "")
-            p = params.get("p", "")
-            # Clear params immediately so refresh doesn't re-submit
-            st.query_params.clear()
-            if self.authenticate(u, p):
-                st.rerun()
-            else:
-                st.session_state["_login_error"] = True
-                st.rerun()
-
-        login_error = st.session_state.pop("_login_error", False)
-        error_html = (
-            '<p style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;'
-            'border-radius:8px;padding:8px 12px;font-size:.85rem;margin:0 0 10px;">'
-            '❌ Invalid username or password</p>'
-            if login_error else ""
-        )
-
-        logo_img = (
-            f'<img src="{logo_src}" style="width:200px;height:auto;display:block;margin:0 auto 8px;" alt="Encinitas">'
-            if logo_src else
-            '<p style="text-align:center;font-size:1.5rem;font-weight:700;color:#545454;">Encinitas</p>'
-        )
-
-        # ── Single st.markdown — CSS + logo + form, zero ghost elements ──
-        # Using a real HTML <form> that navigates to ?_login=1&u=…&p=…
-        # Streamlit re-renders, reads params, authenticates, then st.rerun().
+        # ----------------------------------------------------------------
+        # All visual chrome is pure CSS applied to Streamlit's own
+        # elements — no wrapping <div> that produces a blank element.
+        # ----------------------------------------------------------------
         st.markdown(f"""
-<style>
-[data-testid="stAppViewContainer"]{{background:linear-gradient(135deg,#f0fffe,#f8ffff,#f0f9ff)!important;}}
-[data-testid="stHeader"],[data-testid="stToolbar"]{{background:transparent!important;}}
-[data-testid="stSidebar"]{{display:none!important;}}
-.block-container{{padding-top:0!important;max-width:100%!important;}}
-section.main .block-container{{padding:0!important;}}
-</style>
-<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
-            background:linear-gradient(135deg,#f0fffe,#f8ffff,#f0f9ff);padding:24px;">
-  <div style="background:white;border-radius:20px;
-              box-shadow:0 8px 48px rgba(18,219,180,.14),0 2px 12px rgba(0,0,0,.06);
-              padding:44px 40px 36px;width:100%;max-width:420px;">
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    <div style="text-align:center;margin-bottom:6px;">{logo_img}</div>
-    <p style="text-align:center;color:#12dbb4;font-weight:500;font-size:.9rem;
-              letter-spacing:.05em;margin:0 0 20px;">Clinical Trial Intelligence</p>
-    <hr style="border:none;border-top:1px solid #e8f8f5;margin:0 0 20px;">
+            /* Page background */
+            [data-testid="stAppViewContainer"] {{
+                background: linear-gradient(135deg,#f0fffe 0%,#f8ffff 50%,#f0f9ff 100%) !important;
+            }}
+            [data-testid="stHeader"] {{ background: transparent !important; }}
 
-    {error_html}
+            /* Centre the column and add card feel via the column's own block */
+            .block-container {{
+                padding-top: 5vh !important;
+                max-width: 100% !important;
+            }}
 
-    <form method="GET" action="" style="margin:0;">
-      <input type="hidden" name="_login" value="1">
+            /* The middle column becomes the card */
+            div[data-testid="column"]:nth-child(2) > div:first-child {{
+                background: white;
+                border-radius: 20px;
+                padding: 40px 36px 32px !important;
+                box-shadow: 0 8px 48px rgba(18,219,180,0.13), 0 2px 12px rgba(0,0,0,0.06);
+            }}
 
-      <label style="display:block;font-size:.83rem;font-weight:600;color:#545454;margin-bottom:5px;">
-        Username
-      </label>
-      <input name="u" type="text" placeholder="Enter your username"
-        style="width:100%;box-sizing:border-box;border-radius:10px;
-               border:1.5px solid #e2e8f0;padding:10px 14px;font-size:.95rem;
-               margin-bottom:14px;outline:none;font-family:inherit;"
-        onfocus="this.style.borderColor='#12dbb4';this.style.boxShadow='0 0 0 3px rgba(18,219,180,.15)'"
-        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'">
+            /* Logo block – sits above the form, no extra wrapper needed */
+            .enc-logo-block {{
+                text-align: center;
+                padding-bottom: 6px;
+            }}
+            .enc-tagline {{
+                text-align: center;
+                font-size: 0.9rem;
+                color: #12dbb4;
+                font-weight: 500;
+                letter-spacing: 0.05em;
+                margin: 0 0 18px;
+                font-family: 'Inter', sans-serif;
+            }}
+            .enc-rule {{
+                border: none;
+                border-top: 1px solid #e8f8f5;
+                margin: 0 0 20px;
+            }}
 
-      <label style="display:block;font-size:.83rem;font-weight:600;color:#545454;margin-bottom:5px;">
-        Password
-      </label>
-      <input name="p" type="password" placeholder="Enter your password"
-        style="width:100%;box-sizing:border-box;border-radius:10px;
-               border:1.5px solid #e2e8f0;padding:10px 14px;font-size:.95rem;
-               margin-bottom:18px;outline:none;font-family:inherit;"
-        onfocus="this.style.borderColor='#12dbb4';this.style.boxShadow='0 0 0 3px rgba(18,219,180,.15)'"
-        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'">
+            /* Input fields */
+            .stTextInput > label {{
+                font-size: 0.82rem !important;
+                font-weight: 600 !important;
+                color: #545454 !important;
+                font-family: 'Inter', sans-serif !important;
+            }}
+            .stTextInput > div > input {{
+                border-radius: 10px !important;
+                border: 1.5px solid #e2e8f0 !important;
+                padding: 10px 14px !important;
+                font-size: 0.95rem !important;
+                font-family: 'Inter', sans-serif !important;
+            }}
+            .stTextInput > div > input:focus {{
+                border-color: #12dbb4 !important;
+                box-shadow: 0 0 0 3px rgba(18,219,180,0.15) !important;
+                outline: none !important;
+            }}
 
-      <button type="submit"
-        style="width:100%;background:linear-gradient(90deg,#12dbb4,#14d8e2);
-               color:white;font-weight:600;font-size:1rem;border:none;
-               border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;"
-        onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
-        Sign In
-      </button>
-    </form>
+            /* Sign-in button */
+            .stFormSubmitButton > button {{
+                width: 100% !important;
+                background: linear-gradient(90deg,#12dbb4 0%,#14d8e2 100%) !important;
+                color: white !important;
+                font-weight: 600 !important;
+                font-size: 1rem !important;
+                border: none !important;
+                border-radius: 10px !important;
+                padding: 12px !important;
+                margin-top: 6px !important;
+                cursor: pointer !important;
+                transition: opacity .2s !important;
+                font-family: 'Inter', sans-serif !important;
+            }}
+            .stFormSubmitButton > button:hover {{ opacity: .88 !important; }}
 
-    <details style="margin-top:16px;">
-      <summary style="cursor:pointer;font-size:.82rem;color:#64748b;user-select:none;">
-        Demo accounts
-      </summary>
-      <div style="font-size:.82rem;color:#475569;margin-top:8px;
-                  background:#f8fafc;border-radius:8px;padding:10px 12px;line-height:1.8;">
-        <strong>Free:</strong> demo / demo123<br>
-        <strong>Professional:</strong> pro_demo / pro123<br>
-        <strong>Enterprise:</strong> enterprise_demo / ent123
-      </div>
-    </details>
+            /* Footer */
+            .enc-login-footer {{
+                text-align: center;
+                font-size: 0.76rem;
+                color: #94a3b8;
+                margin-top: 16px;
+                font-family: 'Inter', sans-serif;
+            }}
+            .enc-login-footer a {{
+                color: #12dbb4;
+                text-decoration: none;
+            }}
+        </style>
+        """, unsafe_allow_html=True)
 
-    <p style="text-align:center;font-size:.74rem;color:#94a3b8;margin-top:14px;margin-bottom:0;">
-      © 2026 Encinitas &nbsp;·&nbsp;
-      <a href="?legal_page=terms" style="color:#12dbb4;text-decoration:none;">Terms</a>
-      &nbsp;·&nbsp;
-      <a href="?legal_page=privacy" style="color:#12dbb4;text-decoration:none;">Privacy</a>
-    </p>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+        _, col, _ = st.columns([1, 1.4, 1])
 
+        with col:
+            # Logo + tagline rendered as a single markdown — no wrapping div
+            st.markdown(
+                f'<div class="enc-logo-block">{SVG_LOGO}</div>'
+                f'<p class="enc-tagline">Clinical Trial Intelligence</p>'
+                f'<hr class="enc-rule">',
+                unsafe_allow_html=True,
+            )
+
+            with st.form("login_form"):
+                username = st.text_input("Username", placeholder="Enter your username")
+                password = st.text_input("Password", type="password", placeholder="Enter your password")
+                submitted = st.form_submit_button("Sign In", use_container_width=True)
+                if submitted:
+                    if self.authenticate(username, password):
+                        st.rerun()
+                    else:
+                        st.error("Invalid username or password")
+
+            with st.expander("Demo accounts"):
+                st.markdown(
+                    "**Free:** `demo` / `demo123`  \n"
+                    "**Professional:** `pro_demo` / `pro123`  \n"
+                    "**Enterprise:** `enterprise_demo` / `ent123`"
+                )
+
+            st.markdown(
+                '<p class="enc-login-footer">© 2026 Encinitas &nbsp;·&nbsp; '
+                '<a href="?legal_page=terms">Terms of Service</a> &nbsp;·&nbsp; '
+                '<a href="?legal_page=privacy">Privacy Policy</a></p>',
+                unsafe_allow_html=True,
+            )
+    
     def require_tier(self, required_tier: str, feature_name: str) -> bool:
         """Check if user has required tier"""
         current_tier = self.get_current_tier()
