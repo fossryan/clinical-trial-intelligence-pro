@@ -206,11 +206,16 @@ class AuthManager:
 
         # ── Step 2: load logo ─────────────────────────────────────────────
         logo_src = ""
-        for logo_name in ("encinitalogo.png", "encinitaslogo.png"):
+        logo_type = "image/png"
+        
+        # Try SVG first, then PNG files
+        for logo_name in ("encinitalogo.svg", "encinitalogo.png", "encinitaslogo.png"):
             logo_path = Path(__file__).parent / logo_name
             if logo_path.exists():
                 raw = logo_path.read_bytes()
-                logo_src = f"data:image/png;base64,{base64.b64encode(raw).decode()}"
+                if logo_name.endswith('.svg'):
+                    logo_type = "image/svg+xml"
+                logo_src = f"data:{logo_type};base64,{base64.b64encode(raw).decode()}"
                 break
 
         logo_html = (
