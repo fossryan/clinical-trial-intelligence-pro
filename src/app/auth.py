@@ -319,7 +319,7 @@ class AuthManager:
 
   {error_html}
 
-  <form method="GET" action="" target="_top">
+  <form method="GET" action="" target="_parent">
     <input type="hidden" name="_login" value="1">
     <label>Username</label>
     <input type="text" name="_u" placeholder="Enter your username" autocomplete="username">
