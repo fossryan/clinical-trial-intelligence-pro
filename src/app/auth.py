@@ -312,6 +312,19 @@ class AuthManager:
   }}
   .footer a {{ color: #12dbb4; text-decoration: none; }}
 </style>
+<script>
+  function submitLogin(event) {{
+    event.preventDefault();
+    const form = event.target;
+    const username = form._u.value;
+    const password = form._p.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('_login', '1');
+    url.searchParams.set('_u', username);
+    url.searchParams.set('_p', password);
+    window.parent.location.href = url.toString();
+  }}
+</script>
 </head>
 <body>
 <div class="card">
@@ -321,12 +334,12 @@ class AuthManager:
 
   {error_html}
 
-  <form method="GET" action="" target="_parent">
+  <form method="GET" action="" onsubmit="submitLogin(event)">
     <input type="hidden" name="_login" value="1">
     <label>Username</label>
-    <input type="text" name="_u" placeholder="Enter your username" autocomplete="username" required>
+    <input type="text" name="_u" placeholder="Enter your username" autocomplete="username">
     <label>Password</label>
-    <input type="password" name="_p" placeholder="Enter your password" autocomplete="current-password" required>
+    <input type="password" name="_p" placeholder="Enter your password" autocomplete="current-password">
     <button type="submit">Sign In</button>
   </form>
 
