@@ -206,16 +206,14 @@ class AuthManager:
 
         # ── Step 2: load logo ─────────────────────────────────────────────
         logo_src = ""
-        logo_type = "image/png"
-        
         # Try SVG first, then PNG files
         for logo_name in ("encinitalogo.svg", "encinitalogo.png", "encinitaslogo.png"):
             logo_path = Path(__file__).parent / logo_name
             if logo_path.exists():
                 raw = logo_path.read_bytes()
-                if logo_name.endswith('.svg'):
-                    logo_type = "image/svg+xml"
-                logo_src = f"data:{logo_type};base64,{base64.b64encode(raw).decode()}"
+                # Determine MIME type based on file extension
+                mime_type = "image/svg+xml" if logo_name.endswith('.svg') else "image/png"
+                logo_src = f"data:{mime_type};base64,{base64.b64encode(raw).decode()}"
                 break
 
         logo_html = (
@@ -312,19 +310,6 @@ class AuthManager:
   }}
   .footer a {{ color: #12dbb4; text-decoration: none; }}
 </style>
-<script>
-  function submitLogin(event) {{
-    event.preventDefault();
-    const form = event.target;
-    const username = form._u.value;
-    const password = form._p.value;
-    const url = new URL(window.location.href);
-    url.searchParams.set('_login', '1');
-    url.searchParams.set('_u', username);
-    url.searchParams.set('_p', password);
-    window.parent.location.href = url.toString();
-  }}
-</script>
 </head>
 <body>
 <div class="card">
@@ -334,7 +319,7 @@ class AuthManager:
 
   {error_html}
 
-  <form method="GET" action="" onsubmit="submitLogin(event)">
+  <form method="GET" action="">
     <input type="hidden" name="_login" value="1">
     <label>Username</label>
     <input type="text" name="_u" placeholder="Enter your username" autocomplete="username">
