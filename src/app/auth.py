@@ -321,12 +321,12 @@ class AuthManager:
 
   {error_html}
 
-  <form method="GET" action="">
+  <form method="GET" action="" target="_parent">
     <input type="hidden" name="_login" value="1">
     <label>Username</label>
-    <input type="text" name="_u" placeholder="Enter your username" autocomplete="username">
+    <input type="text" name="_u" placeholder="Enter your username" autocomplete="username" required>
     <label>Password</label>
-    <input type="password" name="_p" placeholder="Enter your password" autocomplete="current-password">
+    <input type="password" name="_p" placeholder="Enter your password" autocomplete="current-password" required>
     <button type="submit">Sign In</button>
   </form>
 
