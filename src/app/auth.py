@@ -433,71 +433,6 @@ class AuthManager:
             .enc-login-footer a:hover {{
                 color: #0fc9a7;
             }}
-            
-            /* Comprehensive feature footer outside card */
-            .enc-features-footer {{
-                max-width: 1400px;
-                margin: 32px auto 0;
-                padding: 40px 48px 32px;
-                background: rgba(255, 255, 255, 0.9);
-                backdrop-filter: blur(10px);
-                border-radius: 20px;
-                border: 1px solid rgba(18, 219, 180, 0.1);
-                box-shadow: 0 10px 40px rgba(18, 219, 180, 0.05);
-                font-family: 'Inter', sans-serif;
-            }}
-            
-            .enc-features-footer h3 {{
-                font-size: 16px;
-                font-weight: 700;
-                color: #1e293b;
-                margin-bottom: 16px;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-            }}
-            
-            .feature-links {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 24px 32px;
-                margin-bottom: 24px;
-            }}
-            
-            .feature-column {{
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }}
-            
-            .feature-column a {{
-                color: #64748b;
-                text-decoration: none;
-                font-size: 13px;
-                transition: all 0.2s;
-                padding: 4px 0;
-            }}
-            
-            .feature-column a:hover {{
-                color: #12dbb4;
-                padding-left: 4px;
-            }}
-            
-            .footer-brand {{
-                text-align: center;
-                padding-top: 24px;
-                border-top: 1px solid #e2e8f0;
-                color: #94a3b8;
-                font-size: 12px;
-            }}
-            
-            .footer-brand a {{
-                color: #12dbb4;
-                text-decoration: none;
-            }}
-            
-            .footer-brand a:hover {{
-                color: #0fc9a7;
-            }}
         </style>
         
         <script>
@@ -587,9 +522,79 @@ class AuthManager:
                 '<a href="?legal_page=privacy">Privacy</a></div>',
                 unsafe_allow_html=True,
             )
-        
-        # Comprehensive features footer outside the login card
+    
+    def render_app_footer(self):
+        """Render comprehensive features footer for the main app (after login)"""
         st.markdown("""
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+            
+            /* Comprehensive feature footer */
+            .enc-features-footer {
+                max-width: 1400px;
+                margin: 48px auto 24px;
+                padding: 40px 48px 32px;
+                background: rgba(255, 255, 255, 0.9);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                border: 1px solid rgba(18, 219, 180, 0.1);
+                box-shadow: 0 10px 40px rgba(18, 219, 180, 0.05);
+                font-family: 'Inter', sans-serif;
+            }
+            
+            .enc-features-footer h3 {
+                font-size: 16px;
+                font-weight: 700;
+                color: #1e293b;
+                margin-bottom: 16px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            
+            .feature-links {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 24px 32px;
+                margin-bottom: 24px;
+            }
+            
+            .feature-column {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .feature-column a {
+                color: #64748b;
+                text-decoration: none;
+                font-size: 13px;
+                transition: all 0.2s;
+                padding: 4px 0;
+            }
+            
+            .feature-column a:hover {
+                color: #12dbb4;
+                padding-left: 4px;
+            }
+            
+            .footer-brand {
+                text-align: center;
+                padding-top: 24px;
+                border-top: 1px solid #e2e8f0;
+                color: #94a3b8;
+                font-size: 12px;
+            }
+            
+            .footer-brand a {
+                color: #12dbb4;
+                text-decoration: none;
+            }
+            
+            .footer-brand a:hover {
+                color: #0fc9a7;
+            }
+        </style>
+        
         <div class="enc-features-footer">
             <h3>🧬 Platform Features</h3>
             <div class="feature-links">
