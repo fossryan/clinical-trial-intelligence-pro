@@ -191,6 +191,12 @@ class AuthManager:
     
     def render_login_page(self):
         """Render Encinitas login page with SVG logo and brand styling"""
+        
+        # Handle signup if form was submitted
+        signup_params = st.query_params
+        if signup_params.get("_signup_success") == "1":
+            st.query_params.clear()
+            st.success("✅ Account created successfully! Please sign in.")
 
         # Inline SVG logo – avoids any file-path issues
         SVG_LOGO = """<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg"
@@ -222,8 +228,7 @@ class AuthManager:
         </svg>"""
 
         # ----------------------------------------------------------------
-        # All visual chrome is pure CSS applied to Streamlit's own
-        # elements — no wrapping <div> that produces a blank element.
+        # Modern styling with glassmorphism and better spacing
         # ----------------------------------------------------------------
         st.markdown(f"""
         <style>
@@ -231,92 +236,180 @@ class AuthManager:
 
             /* Page background */
             [data-testid="stAppViewContainer"] {{
-                background: linear-gradient(135deg,#f0fffe 0%,#f8ffff 50%,#f0f9ff 100%) !important;
+                background: linear-gradient(135deg, #e8fcf8 0%, #e0f7fc 50%, #dbeef9 100%) !important;
             }}
             [data-testid="stHeader"] {{ background: transparent !important; }}
 
-            /* Centre the column and add card feel via the column's own block */
+            /* Centre the column and add card feel */
             .block-container {{
-                padding-top: 5vh !important;
+                padding-top: 4vh !important;
                 max-width: 100% !important;
             }}
 
-            /* The middle column becomes the card */
+            /* The middle column becomes the modern card */
             div[data-testid="column"]:nth-child(2) > div:first-child {{
-                background: white;
-                border-radius: 20px;
-                padding: 40px 36px 32px !important;
-                box-shadow: 0 8px 48px rgba(18,219,180,0.13), 0 2px 12px rgba(0,0,0,0.06);
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(20px);
+                border-radius: 24px;
+                padding: 48px 44px 40px !important;
+                box-shadow: 0 20px 60px rgba(18, 219, 180, 0.08), 
+                            0 4px 16px rgba(0, 0, 0, 0.04),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+                border: 1px solid rgba(18, 219, 180, 0.1);
             }}
 
-            /* Logo block – sits above the form, no extra wrapper needed */
+            /* Logo block */
             .enc-logo-block {{
                 text-align: center;
-                padding-bottom: 6px;
+                padding-bottom: 12px;
             }}
-            .enc-tagline {{
+            
+            .enc-welcome {{
                 text-align: center;
-                font-size: 0.9rem;
-                color: #12dbb4;
-                font-weight: 500;
-                letter-spacing: 0.05em;
-                margin: 0 0 18px;
+                margin-bottom: 8px;
+            }}
+            
+            .enc-welcome h1 {{
+                font-size: 28px;
+                font-weight: 700;
+                color: #1e293b;
+                margin-bottom: 6px;
+                letter-spacing: -0.02em;
                 font-family: 'Inter', sans-serif;
             }}
-            .enc-rule {{
-                border: none;
-                border-top: 1px solid #e8f8f5;
-                margin: 0 0 20px;
+            
+            .enc-tagline {{
+                text-align: center;
+                font-size: 14px;
+                color: #12dbb4;
+                font-weight: 500;
+                letter-spacing: 0.02em;
+                margin: 0 0 28px;
+                text-transform: uppercase;
+                font-family: 'Inter', sans-serif;
             }}
 
             /* Input fields */
             .stTextInput > label {{
-                font-size: 0.82rem !important;
+                font-size: 14px !important;
                 font-weight: 600 !important;
-                color: #545454 !important;
+                color: #334155 !important;
+                margin-bottom: 8px !important;
                 font-family: 'Inter', sans-serif !important;
             }}
             .stTextInput > div > input {{
-                border-radius: 10px !important;
-                border: 1.5px solid #e2e8f0 !important;
-                padding: 10px 14px !important;
-                font-size: 0.95rem !important;
+                border-radius: 12px !important;
+                border: 2px solid #e2e8f0 !important;
+                padding: 14px 16px !important;
+                font-size: 15px !important;
                 font-family: 'Inter', sans-serif !important;
+                background: white !important;
+                transition: all .2s ease !important;
             }}
             .stTextInput > div > input:focus {{
                 border-color: #12dbb4 !important;
-                box-shadow: 0 0 0 3px rgba(18,219,180,0.15) !important;
+                box-shadow: 0 0 0 4px rgba(18, 219, 180, 0.1) !important;
+                background: #fafcfc !important;
                 outline: none !important;
+            }}
+            .stTextInput > div > input::placeholder {{
+                color: #94a3b8 !important;
             }}
 
             /* Sign-in button */
             .stFormSubmitButton > button {{
                 width: 100% !important;
-                background: linear-gradient(90deg,#12dbb4 0%,#14d8e2 100%) !important;
+                background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%) !important;
                 color: white !important;
                 font-weight: 600 !important;
-                font-size: 1rem !important;
+                font-size: 16px !important;
                 border: none !important;
-                border-radius: 10px !important;
-                padding: 12px !important;
-                margin-top: 6px !important;
+                border-radius: 12px !important;
+                padding: 14px !important;
+                margin-top: 8px !important;
                 cursor: pointer !important;
-                transition: opacity .2s !important;
+                transition: all .2s ease !important;
                 font-family: 'Inter', sans-serif !important;
+                box-shadow: 0 4px 12px rgba(18, 219, 180, 0.3) !important;
             }}
-            .stFormSubmitButton > button:hover {{ opacity: .88 !important; }}
+            .stFormSubmitButton > button:hover {{
+                transform: translateY(-1px) !important;
+                box-shadow: 0 6px 20px rgba(18, 219, 180, 0.4) !important;
+            }}
+            .stFormSubmitButton > button:active {{
+                transform: translateY(0) !important;
+            }}
+
+            /* Tabs styling */
+            .stTabs [data-baseweb="tab-list"] {{
+                gap: 8px;
+                background: transparent;
+            }}
+            .stTabs [data-baseweb="tab"] {{
+                height: 50px;
+                background: #f8fafc;
+                border-radius: 12px;
+                color: #64748b;
+                font-weight: 600;
+                font-family: 'Inter', sans-serif;
+            }}
+            .stTabs [aria-selected="true"] {{
+                background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+                color: white;
+            }}
+
+            /* Expander styling */
+            .streamlit-expanderHeader {{
+                font-size: 13px !important;
+                font-weight: 600 !important;
+                color: #475569 !important;
+                font-family: 'Inter', sans-serif !important;
+                background: #f8fafc !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 12px !important;
+                padding: 12px 16px !important;
+            }}
+            
+            .streamlit-expanderContent {{
+                font-size: 13px !important;
+                font-family: 'Inter', sans-serif !important;
+                padding: 12px 16px !important;
+            }}
 
             /* Footer */
             .enc-login-footer {{
                 text-align: center;
-                font-size: 0.76rem;
+                font-size: 12px;
                 color: #94a3b8;
-                margin-top: 16px;
+                margin-top: 28px;
+                padding-top: 20px;
+                border-top: 1px solid #e2e8f0;
                 font-family: 'Inter', sans-serif;
             }}
             .enc-login-footer a {{
                 color: #12dbb4;
                 text-decoration: none;
+                transition: color .2s;
+            }}
+            .enc-login-footer a:hover {{
+                color: #0fc9a7;
+            }}
+            
+            /* Toggle link styling */
+            .toggle-link {{
+                text-align: center;
+                margin-top: 20px;
+                font-size: 14px;
+                color: #64748b;
+                font-family: 'Inter', sans-serif;
+            }}
+            .toggle-link a {{
+                color: #12dbb4;
+                text-decoration: none;
+                font-weight: 600;
+            }}
+            .toggle-link a:hover {{
+                color: #0fc9a7;
             }}
         </style>
         """, unsafe_allow_html=True)
@@ -324,35 +417,70 @@ class AuthManager:
         _, col, _ = st.columns([1, 1.4, 1])
 
         with col:
-            # Logo + tagline rendered as a single markdown — no wrapping div
+            # Logo + tagline
             st.markdown(
                 f'<div class="enc-logo-block">{SVG_LOGO}</div>'
-                f'<p class="enc-tagline">Clinical Trial Intelligence</p>'
-                f'<hr class="enc-rule">',
+                f'<div class="enc-welcome"><h1>Welcome Back</h1></div>'
+                f'<p class="enc-tagline">Clinical Trial Intelligence</p>',
                 unsafe_allow_html=True,
             )
 
-            with st.form("login_form"):
-                username = st.text_input("Username", placeholder="Enter your username")
-                password = st.text_input("Password", type="password", placeholder="Enter your password")
-                submitted = st.form_submit_button("Sign In", use_container_width=True)
-                if submitted:
-                    if self.authenticate(username, password):
-                        st.rerun()
-                    else:
-                        st.error("Invalid username or password")
+            # Tabs for Sign In / Sign Up
+            tab1, tab2 = st.tabs(["Sign In", "Create Account"])
+            
+            with tab1:
+                with st.form("login_form"):
+                    username = st.text_input("Username", placeholder="Enter your username", key="login_username")
+                    password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
+                    submitted = st.form_submit_button("Sign In →", use_container_width=True)
+                    if submitted:
+                        if self.authenticate(username, password):
+                            st.rerun()
+                        else:
+                            st.error("❌ Invalid username or password")
+            
+            with tab2:
+                with st.form("signup_form"):
+                    new_email = st.text_input("Email", placeholder="your@email.com", key="signup_email")
+                    new_username = st.text_input("Username", placeholder="Choose a username", key="signup_username")
+                    new_password = st.text_input("Password", type="password", placeholder="Create a password (min 6 characters)", key="signup_password")
+                    signup_submitted = st.form_submit_button("Create Account →", use_container_width=True)
+                    
+                    if signup_submitted:
+                        # Validate inputs
+                        if not new_email or not new_username or not new_password:
+                            st.error("❌ All fields are required")
+                        elif new_username in self.users:
+                            st.error("❌ Username already exists")
+                        elif len(new_password) < 6:
+                            st.error("❌ Password must be at least 6 characters")
+                        elif "@" not in new_email or "." not in new_email:
+                            st.error("❌ Please enter a valid email address")
+                        else:
+                            # Create new user
+                            self.users[new_username] = {
+                                'password_hash': self._hash_password(new_password),
+                                'tier': UserTier.FREE,
+                                'email': new_email,
+                                'created_at': datetime.now().isoformat()
+                            }
+                            self._save_users()
+                            st.success("✅ Account created! Redirecting to sign in...")
+                            st.query_params["_signup_success"] = "1"
+                            st.rerun()
 
-            with st.expander("Demo accounts"):
+            with st.expander("🎯 Try Demo Accounts"):
                 st.markdown(
                     "**Free:** `demo` / `demo123`  \n"
                     "**Professional:** `pro_demo` / `pro123`  \n"
-                    "**Enterprise:** `enterprise_demo` / `ent123`"
+                    "**Enterprise:** `enterprise_demo` / `ent123`",
+                    unsafe_allow_html=True
                 )
 
             st.markdown(
-                '<p class="enc-login-footer">© 2026 Encinitas &nbsp;·&nbsp; '
-                '<a href="?legal_page=terms">Terms of Service</a> &nbsp;·&nbsp; '
-                '<a href="?legal_page=privacy">Privacy Policy</a></p>',
+                '<div class="enc-login-footer">© 2026 Encinitas &nbsp;&nbsp;·&nbsp;&nbsp; '
+                '<a href="?legal_page=terms">Terms of Service</a> &nbsp;&nbsp;·&nbsp;&nbsp; '
+                '<a href="?legal_page=privacy">Privacy Policy</a></div>',
                 unsafe_allow_html=True,
             )
     
