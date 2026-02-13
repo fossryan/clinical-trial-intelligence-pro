@@ -192,11 +192,11 @@ class AuthManager:
     def render_login_page(self):
         """Render Encinitas login page with SVG logo and brand styling"""
         
-        # Handle signup if form was submitted
+        # Handle signup success message with custom styling
+        show_success = False
         signup_params = st.query_params
         if signup_params.get("_signup_success") == "1":
-            st.query_params.clear()
-            st.success("✅ Account created successfully! Please sign in.")
+            show_success = True
 
         # Inline SVG logo – avoids any file-path issues
         SVG_LOGO = """<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg"
@@ -234,6 +234,44 @@ class AuthManager:
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+            /* Hide Streamlit's default success message dismiss button */
+            [data-testid="stNotification"] button {{
+                display: none !important;
+            }}
+            
+            /* Custom success message */
+            .custom-success-message {{
+                position: relative;
+                background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+                border: 1px solid #a7f3d0;
+                border-radius: 12px;
+                padding: 14px 40px 14px 16px;
+                margin-bottom: 20px;
+                color: #059669;
+                font-family: 'Inter', sans-serif;
+                font-size: 14px;
+                font-weight: 500;
+                box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);
+            }}
+            
+            .custom-success-message .close-btn {{
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                background: none;
+                border: none;
+                color: #059669;
+                font-size: 20px;
+                cursor: pointer;
+                padding: 4px 8px;
+                line-height: 1;
+                transition: opacity 0.2s;
+            }}
+            
+            .custom-success-message .close-btn:hover {{
+                opacity: 0.7;
+            }}
+
             /* Page background */
             [data-testid="stAppViewContainer"] {{
                 background: linear-gradient(135deg, #e8fcf8 0%, #e0f7fc 50%, #dbeef9 100%) !important;
@@ -244,6 +282,7 @@ class AuthManager:
             .block-container {{
                 padding-top: 4vh !important;
                 max-width: 100% !important;
+                padding-bottom: 2vh !important;
             }}
 
             /* The middle column becomes the modern card */
@@ -251,7 +290,7 @@ class AuthManager:
                 background: rgba(255, 255, 255, 0.95);
                 backdrop-filter: blur(20px);
                 border-radius: 24px;
-                padding: 48px 44px 40px !important;
+                padding: 48px 44px 32px !important;
                 box-shadow: 0 20px 60px rgba(18, 219, 180, 0.08), 
                             0 4px 16px rgba(0, 0, 0, 0.04),
                             inset 0 1px 0 rgba(255, 255, 255, 0.8);
@@ -376,13 +415,13 @@ class AuthManager:
                 padding: 12px 16px !important;
             }}
 
-            /* Footer */
+            /* Footer - Simple legal */
             .enc-login-footer {{
                 text-align: center;
-                font-size: 12px;
+                font-size: 11px;
                 color: #94a3b8;
-                margin-top: 28px;
-                padding-top: 20px;
+                margin-top: 24px;
+                padding-top: 16px;
                 border-top: 1px solid #e2e8f0;
                 font-family: 'Inter', sans-serif;
             }}
@@ -395,28 +434,94 @@ class AuthManager:
                 color: #0fc9a7;
             }}
             
-            /* Toggle link styling */
-            .toggle-link {{
-                text-align: center;
-                margin-top: 20px;
-                font-size: 14px;
-                color: #64748b;
+            /* Comprehensive feature footer outside card */
+            .enc-features-footer {{
+                max-width: 1400px;
+                margin: 32px auto 0;
+                padding: 40px 48px 32px;
+                background: rgba(255, 255, 255, 0.9);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                border: 1px solid rgba(18, 219, 180, 0.1);
+                box-shadow: 0 10px 40px rgba(18, 219, 180, 0.05);
                 font-family: 'Inter', sans-serif;
             }}
-            .toggle-link a {{
+            
+            .enc-features-footer h3 {{
+                font-size: 16px;
+                font-weight: 700;
+                color: #1e293b;
+                margin-bottom: 16px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }}
+            
+            .feature-links {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 24px 32px;
+                margin-bottom: 24px;
+            }}
+            
+            .feature-column {{
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }}
+            
+            .feature-column a {{
+                color: #64748b;
+                text-decoration: none;
+                font-size: 13px;
+                transition: all 0.2s;
+                padding: 4px 0;
+            }}
+            
+            .feature-column a:hover {{
+                color: #12dbb4;
+                padding-left: 4px;
+            }}
+            
+            .footer-brand {{
+                text-align: center;
+                padding-top: 24px;
+                border-top: 1px solid #e2e8f0;
+                color: #94a3b8;
+                font-size: 12px;
+            }}
+            
+            .footer-brand a {{
                 color: #12dbb4;
                 text-decoration: none;
-                font-weight: 600;
             }}
-            .toggle-link a:hover {{
+            
+            .footer-brand a:hover {{
                 color: #0fc9a7;
             }}
         </style>
+        
+        <script>
+        function closeSuccessMessage() {{
+            const msg = document.getElementById('success-message');
+            if (msg) {{
+                msg.style.display = 'none';
+            }}
+        }}
+        </script>
         """, unsafe_allow_html=True)
 
         _, col, _ = st.columns([1, 1.4, 1])
 
         with col:
+            # Custom success message with close button
+            if show_success:
+                st.markdown("""
+                <div id="success-message" class="custom-success-message">
+                    <button class="close-btn" onclick="closeSuccessMessage()">×</button>
+                    ✅ Account created successfully! Please sign in.
+                </div>
+                """, unsafe_allow_html=True)
+            
             # Logo + tagline
             st.markdown(
                 f'<div class="enc-logo-block">{SVG_LOGO}</div>'
@@ -465,7 +570,6 @@ class AuthManager:
                                 'created_at': datetime.now().isoformat()
                             }
                             self._save_users()
-                            st.success("✅ Account created! Redirecting to sign in...")
                             st.query_params["_signup_success"] = "1"
                             st.rerun()
 
@@ -479,10 +583,56 @@ class AuthManager:
 
             st.markdown(
                 '<div class="enc-login-footer">© 2026 Encinitas &nbsp;&nbsp;·&nbsp;&nbsp; '
-                '<a href="?legal_page=terms">Terms of Service</a> &nbsp;&nbsp;·&nbsp;&nbsp; '
-                '<a href="?legal_page=privacy">Privacy Policy</a></div>',
+                '<a href="?legal_page=terms">Terms</a> &nbsp;&nbsp;·&nbsp;&nbsp; '
+                '<a href="?legal_page=privacy">Privacy</a></div>',
                 unsafe_allow_html=True,
             )
+        
+        # Comprehensive features footer outside the login card
+        st.markdown("""
+        <div class="enc-features-footer">
+            <h3>🧬 Platform Features</h3>
+            <div class="feature-links">
+                <div class="feature-column">
+                    <strong style="color: #12dbb4; font-size: 14px; margin-bottom: 4px;">Core Features</strong>
+                    <a href="#prediction">📊 Trial Risk Prediction</a>
+                    <a href="#batch">📁 Batch Analysis</a>
+                    <a href="#portfolio">📂 Portfolio Analyzer</a>
+                    <a href="#benchmark">📈 Benchmark Comparisons</a>
+                </div>
+                <div class="feature-column">
+                    <strong style="color: #12dbb4; font-size: 14px; margin-bottom: 4px;">Professional Tools</strong>
+                    <a href="#competitive">🎯 Competitive Intelligence</a>
+                    <a href="#financial">💰 Financial Calculator</a>
+                    <a href="#monitoring">📡 Real-Time Monitoring</a>
+                    <a href="#export">📤 Data Export Center</a>
+                </div>
+                <div class="feature-column">
+                    <strong style="color: #12dbb4; font-size: 14px; margin-bottom: 4px;">Enterprise Features</strong>
+                    <a href="#protocol">🔬 Protocol Optimizer</a>
+                    <a href="#site">🏥 Site Intelligence</a>
+                    <a href="#regulatory">📋 Regulatory Advisor</a>
+                    <a href="#indication">💊 Indication Recommender</a>
+                </div>
+                <div class="feature-column">
+                    <strong style="color: #12dbb4; font-size: 14px; margin-bottom: 4px;">Resources</strong>
+                    <a href="#pricing">💎 Pricing & Plans</a>
+                    <a href="#docs">📚 Documentation</a>
+                    <a href="mailto:sales@encinitas.ai">📧 Contact Sales</a>
+                    <a href="mailto:support@encinitas.ai">🛟 Support</a>
+                </div>
+            </div>
+            <div class="footer-brand">
+                <strong style="background: linear-gradient(90deg, #12dbb4, #14d8e2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ENCINITAS</strong>
+                &nbsp;&nbsp;·&nbsp;&nbsp;
+                Powered by AI-driven clinical trial intelligence
+                &nbsp;&nbsp;·&nbsp;&nbsp;
+                <a href="?legal_page=terms">Terms</a>
+                &nbsp;&nbsp;·&nbsp;&nbsp;
+                <a href="?legal_page=privacy">Privacy</a>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     def require_tier(self, required_tier: str, feature_name: str) -> bool:
         """Check if user has required tier"""
