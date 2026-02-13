@@ -192,10 +192,7 @@ class AuthManager:
         # ── Step 1: handle submitted credentials ─────────────────────────
         params = st.query_params
         login_attempted = params.get("_login") == "1"
-        signup_attempted = params.get("_signup") == "1"
         login_error = False
-        signup_error = False
-        signup_success = False
 
         if login_attempted:
             u = params.get("_u", "")
@@ -206,36 +203,6 @@ class AuthManager:
                 return
             else:
                 login_error = True
-        
-        elif signup_attempted:
-            email = params.get("_email", "")
-            new_u = params.get("_new_u", "")
-            new_p = params.get("_new_p", "")
-            st.query_params.clear()
-            
-            # Validate inputs
-            if not email or not new_u or not new_p:
-                signup_error = "All fields are required"
-            elif new_u in self.users:
-                signup_error = "Username already exists"
-            elif len(new_p) < 6:
-                signup_error = "Password must be at least 6 characters"
-            else:
-                # Create new user
-                self.users[new_u] = {
-                    'password_hash': self._hash_password(new_p),
-                    'tier': UserTier.FREE,
-                    'email': email,
-                    'created_at': datetime.now().isoformat()
-                }
-                self._save_users()
-                # Auto-login the new user
-                if self.authenticate(new_u, new_p):
-                    st.rerun()
-                    return
-                else:
-                    signup_success = True
-
 
         # ── Step 2: load logo ─────────────────────────────────────────────
         logo_src = ""
@@ -257,26 +224,12 @@ class AuthManager:
             'text-align:center;margin:0 0 6px;">Encinitas</p>'
         )
 
-        error_html = ""
-        if login_error:
-            error_html = (
-                '<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;'
-                'border-radius:12px;padding:12px 16px;font-size:13px;margin-bottom:16px;">'
-                '❌ Invalid username or password</div>'
-            )
-        elif signup_error:
-            error_html = (
-                f'<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;'
-                f'border-radius:12px;padding:12px 16px;font-size:13px;margin-bottom:16px;">'
-                f'❌ {signup_error}</div>'
-            )
-        elif signup_success:
-            error_html = (
-                '<div style="color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;'
-                'border-radius:12px;padding:12px 16px;font-size:13px;margin-bottom:16px;">'
-                '✅ Account created! Please sign in.</div>'
-            )
-
+        error_html = (
+            '<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;'
+            'border-radius:8px;padding:9px 13px;font-size:13px;margin-bottom:14px;">'
+            '&#10060; Invalid username or password</div>'
+            if login_error else ""
+        )
 
         # ── Step 3: render via components.html (bypasses sanitizer) ───────
         # The form uses GET so the credentials appear in query_params on submit,
@@ -287,269 +240,96 @@ class AuthManager:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, 'Inter', sans-serif; }}
   html, body {{
     height: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #e8fcf8 0%, #e0f7fc 50%, #dbeef9 100%);
+    background: linear-gradient(135deg, #f0fffe 0%, #f8ffff 50%, #f0f9ff 100%);
   }}
   body {{
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
-    min-height: 600px;
+    padding: 20px;
+    min-height: 540px;
   }}
   .card {{
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    box-shadow: 0 20px 60px rgba(18, 219, 180, 0.08), 
-                0 4px 16px rgba(0, 0, 0, 0.04),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    padding: 48px 44px 40px;
-    width: 100%;
-    max-width: 440px;
-    border: 1px solid rgba(18, 219, 180, 0.1);
-  }}
-  .logo-wrap {{ 
-    text-align: center; 
-    margin-bottom: 12px;
-  }}
-  .welcome {{
-    text-align: center;
-    margin-bottom: 8px;
-  }}
-  .welcome h1 {{
-    font-size: 28px;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 6px;
-    letter-spacing: -0.02em;
-  }}
-  .tagline {{
-    text-align: center;
-    color: #12dbb4;
-    font-weight: 500;
-    font-size: 14px;
-    letter-spacing: 0.02em;
-    margin-bottom: 28px;
-    text-transform: uppercase;
-  }}
-  .form-group {{
-    margin-bottom: 20px;
-  }}
-  label {{
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #334155;
-    margin-bottom: 8px;
-  }}
-  input[type=text], input[type=password], input[type=email] {{
-    width: 100%;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 14px 16px;
-    font-size: 15px;
-    outline: none;
     background: white;
-    transition: all .2s ease;
-    font-family: inherit;
+    border-radius: 20px;
+    box-shadow: 0 8px 48px rgba(18,219,180,0.14), 0 2px 12px rgba(0,0,0,0.07);
+    padding: 44px 40px 36px;
+    width: 100%;
+    max-width: 400px;
   }}
-  input[type=text]:focus, input[type=password]:focus, input[type=email]:focus {{
+  .logo-wrap {{ text-align: center; margin-bottom: 8px; }}
+  .tagline {{
+    text-align: center; color: #12dbb4; font-weight: 500;
+    font-size: 14px; letter-spacing: 0.05em; margin-bottom: 20px;
+  }}
+  hr {{ border: none; border-top: 1px solid #e8f8f5; margin-bottom: 20px; }}
+  label {{
+    display: block; font-size: 13px; font-weight: 600;
+    color: #545454; margin-bottom: 5px;
+  }}
+  input[type=text], input[type=password] {{
+    width: 100%; border: 1.5px solid #e2e8f0; border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; outline: none;
+    margin-bottom: 14px; transition: border-color .2s, box-shadow .2s;
+  }}
+  input[type=text]:focus, input[type=password]:focus {{
     border-color: #12dbb4;
-    box-shadow: 0 0 0 4px rgba(18, 219, 180, 0.1);
-    background: #fafcfc;
-  }}
-  input::placeholder {{
-    color: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(18,219,180,0.15);
   }}
   button {{
     width: 100%;
-    background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
-    color: white;
-    font-weight: 600;
-    font-size: 16px;
-    border: none;
-    border-radius: 12px;
-    padding: 14px;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: all .2s ease;
-    box-shadow: 0 4px 12px rgba(18, 219, 180, 0.3);
+    background: linear-gradient(90deg, #12dbb4, #14d8e2);
+    color: white; font-weight: 600; font-size: 15px;
+    border: none; border-radius: 10px; padding: 12px;
+    cursor: pointer; margin-top: 4px; transition: opacity .2s;
   }}
-  button:hover {{
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(18, 219, 180, 0.4);
-  }}
-  button:active {{
-    transform: translateY(0);
-  }}
-  .divider {{
-    display: flex;
-    align-items: center;
-    text-align: center;
-    margin: 24px 0;
-    color: #94a3b8;
-    font-size: 13px;
-  }}
-  .divider::before,
-  .divider::after {{
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid #e2e8f0;
-  }}
-  .divider span {{
-    padding: 0 12px;
-  }}
-  .signup-link {{
-    text-align: center;
-    margin-top: 20px;
-    font-size: 14px;
-    color: #64748b;
-  }}
-  .signup-link a {{
-    color: #12dbb4;
-    text-decoration: none;
-    font-weight: 600;
-    transition: color .2s;
-  }}
-  .signup-link a:hover {{
-    color: #0fc9a7;
-  }}
-  details {{
-    margin-top: 20px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 12px 16px;
-    background: #f8fafc;
-  }}
+  button:hover {{ opacity: 0.88; }}
+  details {{ margin-top: 16px; }}
   summary {{
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    color: #475569;
-    user-select: none;
-    list-style: none;
+    cursor: pointer; font-size: 12px; color: #64748b;
+    user-select: none; list-style: none;
   }}
   summary::marker {{ display: none; }}
-  summary::before {{
-    content: "▸  ";
-    color: #12dbb4;
-    font-weight: bold;
-  }}
+  summary::before {{ content: "▸  "; }}
   details[open] summary::before {{ content: "▾  "; }}
   .demo-box {{
-    font-size: 13px;
-    color: #475569;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #e2e8f0;
-    line-height: 1.9;
-  }}
-  .demo-box strong {{
-    color: #1e293b;
-    font-weight: 600;
+    font-size: 12px; color: #475569; margin-top: 8px;
+    background: #f8fafc; border-radius: 8px;
+    padding: 10px 12px; line-height: 1.9;
   }}
   .demo-box code {{
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 2px 8px;
-    font-family: 'SF Mono', 'Consolas', monospace;
-    font-size: 12px;
-    color: #12dbb4;
-    font-weight: 500;
+    background: #e2e8f0; border-radius: 4px;
+    padding: 1px 5px; font-family: monospace; font-size: 11px;
   }}
   .footer {{
-    text-align: center;
-    font-size: 12px;
-    color: #94a3b8;
-    margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid #e2e8f0;
+    text-align: center; font-size: 11px; color: #94a3b8;
+    margin-top: 16px;
   }}
-  .footer a {{
-    color: #12dbb4;
-    text-decoration: none;
-    transition: color .2s;
-  }}
-  .footer a:hover {{
-    color: #0fc9a7;
-  }}
-  .hidden {{ display: none; }}
+  .footer a {{ color: #12dbb4; text-decoration: none; }}
 </style>
-<script>
-  function toggleForm() {{
-    const loginForm = document.getElementById('loginForm');
-    const signupForm = document.getElementById('signupForm');
-    const isLogin = loginForm.classList.contains('hidden');
-    
-    if (isLogin) {{
-      loginForm.classList.remove('hidden');
-      signupForm.classList.add('hidden');
-    }} else {{
-      loginForm.classList.add('hidden');
-      signupForm.classList.remove('hidden');
-    }}
-  }}
-</script>
 </head>
 <body>
 <div class="card">
   <div class="logo-wrap">{logo_html}</div>
-  <div class="welcome">
-    <h1>Welcome Back</h1>
-  </div>
   <p class="tagline">Clinical Trial Intelligence</p>
+  <hr>
 
   {error_html}
 
-  <div id="loginForm">
-    <form method="GET" action="" target="_parent">
-      <input type="hidden" name="_login" value="1">
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" name="_u" placeholder="Enter your username" autocomplete="username" required>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="_p" placeholder="Enter your password" autocomplete="current-password" required>
-      </div>
-      <button type="submit">Sign In →</button>
-    </form>
-    
-    <div class="signup-link">
-      Don't have an account? <a href="#" onclick="toggleForm(); return false;">Create one</a>
-    </div>
-  </div>
-
-  <div id="signupForm" class="hidden">
-    <form method="GET" action="" target="_parent">
-      <input type="hidden" name="_signup" value="1">
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" name="_email" placeholder="your@email.com" autocomplete="email" required>
-      </div>
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" name="_new_u" placeholder="Choose a username" autocomplete="username" required>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="_new_p" placeholder="Create a password" autocomplete="new-password" required>
-      </div>
-      <button type="submit">Create Account →</button>
-    </form>
-    
-    <div class="signup-link">
-      Already have an account? <a href="#" onclick="toggleForm(); return false;">Sign in</a>
-    </div>
-  </div>
+  <form method="GET" action="" target="_parent">
+    <input type="hidden" name="_login" value="1">
+    <label>Username</label>
+    <input type="text" name="_u" placeholder="Enter your username" autocomplete="username">
+    <label>Password</label>
+    <input type="password" name="_p" placeholder="Enter your password" autocomplete="current-password">
+    <button type="submit">Sign In</button>
+  </form>
 
   <details>
-    <summary>Try Demo Accounts</summary>
+    <summary>Demo accounts</summary>
     <div class="demo-box">
       <strong>Free:</strong> <code>demo</code> / <code>demo123</code><br>
       <strong>Professional:</strong> <code>pro_demo</code> / <code>pro123</code><br>
@@ -557,12 +337,12 @@ class AuthManager:
     </div>
   </details>
 
-  <div class="footer">
-    &copy; 2026 Encinitas &nbsp;&nbsp;·&nbsp;&nbsp;
+  <p class="footer">
+    &copy; 2026 Encinitas &nbsp;&middot;&nbsp;
     <a href="?legal_page=terms" target="_parent">Terms</a>
-    &nbsp;&nbsp;·&nbsp;&nbsp;
+    &nbsp;&middot;&nbsp;
     <a href="?legal_page=privacy" target="_parent">Privacy</a>
-  </div>
+  </p>
 </div>
 </body>
 </html>"""
