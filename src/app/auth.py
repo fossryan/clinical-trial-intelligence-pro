@@ -1,5 +1,6 @@
 """
 User Authentication and Tier Management for Encinitas
+Updated with improved login design and collapsible demo accounts
 """
 
 import streamlit as st
@@ -76,27 +77,69 @@ class AuthManager:
             st.session_state.tier = UserTier.FREE
         if 'monthly_usage' not in st.session_state:
             st.session_state.monthly_usage = {'predictions': 0, 'last_reset': datetime.now().isoformat()}
+        if 'show_demo_accounts' not in st.session_state:
+            st.session_state.show_demo_accounts = False
     
     def _load_users(self) -> Dict:
         """Load users from JSON file"""
         if not self.users_file.exists():
+            # Enhanced demo accounts with better credentials
             default_users = {
                 'demo': {
                     'password_hash': self._hash_password('demo123'),
                     'tier': UserTier.FREE,
                     'email': 'demo@encinitas.ai',
+                    'role': 'Free User',
                     'created_at': datetime.now().isoformat()
                 },
                 'pro_demo': {
                     'password_hash': self._hash_password('pro123'),
                     'tier': UserTier.PROFESSIONAL,
                     'email': 'pro@encinitas.ai',
+                    'role': 'Professional User',
                     'created_at': datetime.now().isoformat()
                 },
                 'enterprise_demo': {
                     'password_hash': self._hash_password('ent123'),
                     'tier': UserTier.ENTERPRISE,
                     'email': 'enterprise@encinitas.ai',
+                    'role': 'Enterprise User',
+                    'created_at': datetime.now().isoformat()
+                },
+                # Additional professional demo accounts
+                'pharma.exec': {
+                    'password_hash': self._hash_password('demo2024'),
+                    'tier': UserTier.ENTERPRISE,
+                    'email': 'pharma.exec@bigtrial.com',
+                    'role': 'Pharma Executive',
+                    'created_at': datetime.now().isoformat()
+                },
+                'biotech.founder': {
+                    'password_hash': self._hash_password('demo2024'),
+                    'tier': UserTier.PROFESSIONAL,
+                    'email': 'founder@biotech-startup.com',
+                    'role': 'Biotech Founder',
+                    'created_at': datetime.now().isoformat()
+                },
+                'investor': {
+                    'password_hash': self._hash_password('demo2024'),
+                    'tier': UserTier.PROFESSIONAL,
+                    'email': 'investor@healthcare-vc.com',
+                    'role': 'Healthcare Investor',
+                    'created_at': datetime.now().isoformat()
+                },
+                'researcher': {
+                    'password_hash': self._hash_password('demo2024'),
+                    'tier': UserTier.FREE,
+                    'email': 'researcher@university.edu',
+                    'role': 'Clinical Researcher',
+                    'created_at': datetime.now().isoformat()
+                },
+                'analyst': {
+                    'password_hash': self._hash_password('demo2024'),
+                    'tier': UserTier.PROFESSIONAL,
+                    'email': 'analyst@consulting-firm.com',
+                    'role': 'Data Analyst',
                     'created_at': datetime.now().isoformat()
                 }
             }
@@ -129,6 +172,8 @@ class AuthManager:
             st.session_state.authenticated = True
             st.session_state.username = username
             st.session_state.tier = self.users[username]['tier']
+            st.session_state.user_email = self.users[username].get('email', '')
+            st.session_state.user_role = self.users[username].get('role', 'User')
             self._load_usage(username)
             return True
         
@@ -139,6 +184,8 @@ class AuthManager:
         st.session_state.authenticated = False
         st.session_state.username = None
         st.session_state.tier = UserTier.FREE
+        st.session_state.user_email = None
+        st.session_state.user_role = None
     
     def is_authenticated(self) -> bool:
         """Check if user is authenticated"""
@@ -190,7 +237,7 @@ class AuthManager:
         return current_usage < limit
     
     def render_login_page(self):
-        """Render Encinitas login page with SVG logo and brand styling"""
+        """Render Encinitas login page with SVG logo and improved demo accounts section"""
         
         # Handle signup success message with custom styling
         show_success = False
@@ -198,7 +245,7 @@ class AuthManager:
         if signup_params.get("_signup_success") == "1":
             show_success = True
 
-        # Inline SVG logo – avoids any file-path issues
+        # Inline SVG logo
         SVG_LOGO = """<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg"
             xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 532.01 385.6"
             style="width:220px;height:auto;display:block;margin:0 auto 8px;">
@@ -227,9 +274,7 @@ class AuthManager:
           </g>
         </svg>"""
 
-        # ----------------------------------------------------------------
-        # Modern styling with glassmorphism and better spacing
-        # ----------------------------------------------------------------
+        # Modern styling with improved demo accounts section
         st.markdown(f"""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -300,169 +345,192 @@ class AuthManager:
             /* Logo block */
             .enc-logo-block {{
                 text-align: center;
-                padding-bottom: 12px;
+                margin-bottom: 12px;
             }}
-            
-            .enc-welcome {{
-                text-align: center;
-                margin-bottom: 8px;
-            }}
-            
+
+            /* Welcome text */
             .enc-welcome h1 {{
-                font-size: 28px;
+                font-family: 'Inter', sans-serif;
                 font-weight: 700;
-                color: #1e293b;
-                margin-bottom: 6px;
-                letter-spacing: -0.02em;
-                font-family: 'Inter', sans-serif;
-            }}
-            
-            .enc-tagline {{
+                font-size: 32px;
+                margin: 0 0 6px 0;
                 text-align: center;
-                font-size: 14px;
-                color: #12dbb4;
-                font-weight: 500;
-                letter-spacing: 0.02em;
-                margin: 0 0 28px;
-                text-transform: uppercase;
+                background: linear-gradient(135deg, #0f766e 0%, #12dbb4 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }}
+
+            /* Tagline */
+            .enc-tagline {{
                 font-family: 'Inter', sans-serif;
+                color: #64748b;
+                font-size: 15px;
+                text-align: center;
+                margin-bottom: 32px;
+                font-weight: 500;
             }}
 
-            /* Input fields */
-            .stTextInput > label {{
-                font-size: 14px !important;
-                font-weight: 600 !important;
-                color: #334155 !important;
-                margin-bottom: 8px !important;
-                font-family: 'Inter', sans-serif !important;
-            }}
-            .stTextInput > div > input {{
-                border-radius: 12px !important;
-                border: 2px solid #e2e8f0 !important;
-                padding: 14px 16px !important;
-                font-size: 15px !important;
-                font-family: 'Inter', sans-serif !important;
-                background: white !important;
-                transition: all .2s ease !important;
-            }}
-            .stTextInput > div > input:focus {{
-                border-color: #12dbb4 !important;
-                box-shadow: 0 0 0 4px rgba(18, 219, 180, 0.1) !important;
-                background: #fafcfc !important;
-                outline: none !important;
-            }}
-            .stTextInput > div > input::placeholder {{
-                color: #94a3b8 !important;
-            }}
-
-            /* Sign-in button */
-            .stFormSubmitButton > button {{
-                width: 100% !important;
-                background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%) !important;
-                color: white !important;
-                font-weight: 600 !important;
-                font-size: 16px !important;
-                border: none !important;
-                border-radius: 12px !important;
-                padding: 14px !important;
-                margin-top: 8px !important;
-                cursor: pointer !important;
-                transition: all .2s ease !important;
-                font-family: 'Inter', sans-serif !important;
-                box-shadow: 0 4px 12px rgba(18, 219, 180, 0.3) !important;
-            }}
-            .stFormSubmitButton > button:hover {{
-                transform: translateY(-1px) !important;
-                box-shadow: 0 6px 20px rgba(18, 219, 180, 0.4) !important;
-            }}
-            .stFormSubmitButton > button:active {{
-                transform: translateY(0) !important;
-            }}
-
-            /* Tabs styling */
+            /* Tabs */
             .stTabs [data-baseweb="tab-list"] {{
                 gap: 8px;
-                background: transparent;
-            }}
-            .stTabs [data-baseweb="tab"] {{
-                height: 50px;
-                background: #f8fafc;
+                background: rgba(18, 219, 180, 0.05);
+                padding: 6px;
                 border-radius: 12px;
-                color: #64748b;
-                font-weight: 600;
+            }}
+
+            .stTabs [data-baseweb="tab"] {{
                 font-family: 'Inter', sans-serif;
+                font-weight: 600;
+                font-size: 15px;
+                padding: 10px 20px;
+                border-radius: 8px;
+                transition: all 0.2s;
+                color: #64748b;
             }}
+
             .stTabs [aria-selected="true"] {{
+                background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%) !important;
+                color: white !important;
+                box-shadow: 0 4px 12px rgba(18, 219, 180, 0.25);
+            }}
+
+            /* Form inputs */
+            .stTextInput > div > div > input {{
+                font-family: 'Inter', sans-serif;
+                font-size: 15px;
+                border-radius: 10px;
+                border: 2px solid #e2e8f0;
+                padding: 12px 16px;
+                transition: all 0.2s;
+                background: #f8fafc;
+            }}
+
+            .stTextInput > div > div > input:focus {{
+                border-color: #12dbb4;
+                background: white;
+                box-shadow: 0 0 0 3px rgba(18, 219, 180, 0.1);
+            }}
+
+            /* Submit buttons */
+            .stButton > button {{
+                font-family: 'Inter', sans-serif;
+                font-weight: 600;
+                font-size: 15px;
+                padding: 12px 24px;
+                border-radius: 10px;
                 background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+                border: none;
                 color: white;
+                transition: all 0.3s;
+                box-shadow: 0 4px 12px rgba(18, 219, 180, 0.25);
             }}
 
-            /* Expander styling */
-            .streamlit-expanderHeader {{
-                font-size: 13px !important;
-                font-weight: 600 !important;
-                color: #475569 !important;
-                font-family: 'Inter', sans-serif !important;
-                background: #f8fafc !important;
-                border: 1px solid #e2e8f0 !important;
-                border-radius: 12px !important;
-                padding: 12px 16px !important;
-            }}
-            
-            .streamlit-expanderContent {{
-                font-size: 13px !important;
-                font-family: 'Inter', sans-serif !important;
-                padding: 12px 16px !important;
+            .stButton > button:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(18, 219, 180, 0.35);
             }}
 
-            /* Footer - Simple legal */
+            /* Expander for demo accounts */
+            .stExpander {{
+                background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+                border: 2px solid #14B8A6;
+                border-radius: 12px;
+                margin-top: 16px;
+            }}
+
+            .stExpander [data-testid="stExpanderDetails"] {{
+                padding: 16px;
+            }}
+
+            /* Demo account cards */
+            .demo-account-card {{
+                background: white;
+                border: 1px solid #99f6e4;
+                border-radius: 8px;
+                padding: 12px 16px;
+                margin: 8px 0;
+                transition: all 0.2s;
+                cursor: pointer;
+            }}
+
+            .demo-account-card:hover {{
+                border-color: #14B8A6;
+                box-shadow: 0 2px 8px rgba(20, 184, 166, 0.15);
+                transform: translateX(3px);
+            }}
+
+            .demo-role {{
+                font-weight: 600;
+                color: #0f766e;
+                font-size: 14px;
+                margin-bottom: 4px;
+            }}
+
+            .demo-credentials {{
+                font-size: 13px;
+                color: #64748B;
+                font-family: 'Courier New', monospace;
+            }}
+
+            .demo-tier {{
+                display: inline-block;
+                background: linear-gradient(135deg, #14B8A6 0%, #0D9488 100%);
+                color: white;
+                padding: 2px 10px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 600;
+                margin-top: 4px;
+            }}
+
+            /* Footer */
             .enc-login-footer {{
                 text-align: center;
-                font-size: 11px;
-                color: #94a3b8;
-                margin-top: 24px;
-                padding-top: 16px;
+                margin-top: 32px;
+                padding-top: 24px;
                 border-top: 1px solid #e2e8f0;
+                color: #94a3b8;
+                font-size: 13px;
                 font-family: 'Inter', sans-serif;
             }}
+
             .enc-login-footer a {{
                 color: #12dbb4;
                 text-decoration: none;
-                transition: color .2s;
+                transition: color 0.2s;
             }}
+
             .enc-login-footer a:hover {{
                 color: #0fc9a7;
             }}
-            
-            /* Comprehensive feature footer outside card */
+
+            /* Features footer */
             .enc-features-footer {{
-                max-width: 1400px;
-                margin: 32px auto 0;
-                padding: 40px 48px 32px;
-                background: rgba(255, 255, 255, 0.9);
+                max-width: 1200px;
+                margin: 48px auto 24px;
+                padding: 40px 32px;
+                background: rgba(255, 255, 255, 0.7);
                 backdrop-filter: blur(10px);
                 border-radius: 20px;
                 border: 1px solid rgba(18, 219, 180, 0.1);
-                box-shadow: 0 10px 40px rgba(18, 219, 180, 0.05);
-                font-family: 'Inter', sans-serif;
             }}
-            
+
             .enc-features-footer h3 {{
-                font-size: 16px;
-                font-weight: 700;
-                color: #1e293b;
-                margin-bottom: 16px;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
+                font-family: 'Inter', sans-serif;
+                text-align: center;
+                color: #0f766e;
+                margin-bottom: 32px;
+                font-size: 24px;
             }}
-            
+
             .feature-links {{
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 24px 32px;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 32px;
                 margin-bottom: 24px;
             }}
-            
+
             .feature-column {{
                 display: flex;
                 flex-direction: column;
@@ -526,7 +594,7 @@ class AuthManager:
             st.markdown(
                 f'<div class="enc-logo-block">{SVG_LOGO}</div>'
                 f'<div class="enc-welcome"><h1>Welcome Back</h1></div>'
-                f'<p class="enc-tagline">Clinical Trial Intelligence</p>',
+                f'<p class="enc-tagline">Clinical Trial Intelligence Platform</p>',
                 unsafe_allow_html=True,
             )
 
@@ -535,11 +603,12 @@ class AuthManager:
             
             with tab1:
                 with st.form("login_form"):
-                    username = st.text_input("Username", placeholder="Enter your username", key="login_username")
+                    username = st.text_input("Username or Email", placeholder="Enter your username", key="login_username")
                     password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
                     submitted = st.form_submit_button("Sign In →", use_container_width=True)
                     if submitted:
                         if self.authenticate(username, password):
+                            st.success(f"✅ Welcome back, {self.users[username].get('role', 'User')}!")
                             st.rerun()
                         else:
                             st.error("❌ Invalid username or password")
@@ -567,19 +636,64 @@ class AuthManager:
                                 'password_hash': self._hash_password(new_password),
                                 'tier': UserTier.FREE,
                                 'email': new_email,
+                                'role': 'User',
                                 'created_at': datetime.now().isoformat()
                             }
                             self._save_users()
                             st.query_params["_signup_success"] = "1"
                             st.rerun()
 
-            with st.expander("🎯 Try Demo Accounts"):
-                st.markdown(
-                    "**Free:** `demo` / `demo123`  \n"
-                    "**Professional:** `pro_demo` / `pro123`  \n"
-                    "**Enterprise:** `enterprise_demo` / `ent123`",
-                    unsafe_allow_html=True
-                )
+            # Improved demo accounts section - Collapsible
+            with st.expander("🎯 Try Demo Access", expanded=False):
+                st.markdown("**Click any account to see credentials:**")
+                
+                # Group demo accounts by tier
+                demo_accounts_display = {
+                    'Enterprise Tier': [
+                        ('pharma.exec', '🏢 Pharma Executive', 'pharma.exec@bigtrial.com'),
+                        ('enterprise_demo', '🏢 Enterprise Demo', 'enterprise@encinitas.ai'),
+                    ],
+                    'Professional Tier': [
+                        ('biotech.founder', '🧬 Biotech Founder', 'founder@biotech-startup.com'),
+                        ('investor', '💰 Healthcare Investor', 'investor@healthcare-vc.com'),
+                        ('analyst', '📊 Data Analyst', 'analyst@consulting-firm.com'),
+                        ('pro_demo', '💼 Professional Demo', 'pro@encinitas.ai'),
+                    ],
+                    'Free Tier': [
+                        ('researcher', '🔬 Clinical Researcher', 'researcher@university.edu'),
+                        ('demo', '🆓 Free Demo', 'demo@encinitas.ai'),
+                    ]
+                }
+                
+                for tier_name, accounts in demo_accounts_display.items():
+                    st.markdown(f"**{tier_name}:**")
+                    for username, display_name, email in accounts:
+                        if username in self.users:
+                            user_data = self.users[username]
+                            tier_info = UserTier.TIER_FEATURES[user_data['tier']]
+                            
+                            # Determine password (most use demo2024, some use specific passwords)
+                            if username in ['demo', 'pro_demo', 'enterprise_demo']:
+                                password_hint = {
+                                    'demo': 'demo123',
+                                    'pro_demo': 'pro123',
+                                    'enterprise_demo': 'ent123'
+                                }[username]
+                            else:
+                                password_hint = 'demo2024'
+                            
+                            st.markdown(f"""
+                            <div class="demo-account-card">
+                                <div class="demo-role">{display_name}</div>
+                                <div class="demo-credentials">
+                                    👤 Username: <strong>{username}</strong><br>
+                                    🔑 Password: <strong>{password_hint}</strong><br>
+                                    📧 Email: {email}
+                                </div>
+                                <span class="demo-tier">{tier_info['name']} Access</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                    st.markdown("")
 
             st.markdown(
                 '<div class="enc-login-footer">© 2026 Encinitas &nbsp;&nbsp;·&nbsp;&nbsp; '
