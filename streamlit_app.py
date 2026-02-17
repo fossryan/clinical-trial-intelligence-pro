@@ -17,7 +17,50 @@ from pathlib import Path
 import shutil
 import io
 import matplotlib.pyplot as plt
+import os
+from datetime import datetime
+import sys
 
+# Add src to path for new modules
+sys.path.insert(0, str(Path(__file__).parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent / 'src' / 'app'))
+
+# Import authentication (new)
+try:
+    from app.auth import auth_manager, UserTier
+    AUTH_ENABLED = True
+except ImportError:
+    AUTH_ENABLED = False
+
+# Import network utilities (new)
+try:
+    from data_collection.network_utils import NetworkUtils
+    NETWORK_UTILS_AVAILABLE = True
+except ImportError:
+    NETWORK_UTILS_AVAILABLE = False
+
+# Import payment processing (new)
+try:
+    from app.payments import (
+        render_upgrade_button,
+        render_payment_success_banner,
+        render_billing_portal_link,
+        TIER_PRICES,
+    )
+    PAYMENTS_AVAILABLE = True
+except ImportError:
+    PAYMENTS_AVAILABLE = False
+
+# Import legal (new)
+try:
+    from app.legal import (
+        render_disclaimer_banner,
+        render_footer,
+        handle_legal_page_routing,
+    )
+    LEGAL_AVAILABLE = True
+except ImportError:
+    LEGAL_AVAILABLE = False
 # Import premium features
 try:
     from premium_pages import (
@@ -47,72 +90,562 @@ except ImportError:
 # PAGE CONFIG & CSS
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Clinical Trial Risk Intelligence",
+    page_title="Encinitas | Clinical Trial Intelligence",
     page_icon="🧬",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # Hide sidebar by default
 )
 
 st.markdown("""
 <style>
+    /* Color Palette:
+       Primary: #12dbb4 (Teal)
+       Secondary: #14d8e2 (Cyan)
+       Dark: #545454 (Charcoal)
+    */
+    
+    /* ========== GLOBAL STYLES ========== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    /* Hide sidebar completely for full-width experience */
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+    
+    /* Remove sidebar collapse button */
+    [data-testid="collapsedControl"] {
+        display: none;
+    }
+    
+    /* Main app background */
+    .main {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        padding-top: 0 !important;
+    }
+    
+    /* Remove default Streamlit padding to make header flush */
+    .block-container {
+        padding-top: 3rem;
+        padding-left: 3rem;
+        padding-right: 3rem;
+        max-width: 100%;
+    }
+    
+    /* ========== TOP NAVIGATION ========== */
+    .stSelectbox {
+        background: white;
+        border-radius: 12px;
+        padding: 0.5rem;
+        box-shadow: 0 2px 8px rgba(84, 84, 84, 0.08);
+    }
+    
+    .stSelectbox > div > div {
+        background: white;
+        border: 2px solid #12dbb4;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .stSelectbox > div > div:hover {
+        border-color: #14d8e2;
+        box-shadow: 0 0 0 3px rgba(18, 219, 180, 0.1);
+    }
+    
+    /* Popover for settings */
+    [data-testid="stPopover"] button {
+        background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    [data-testid="stPopover"] button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(84, 84, 84, 0.3);
+    }
+    
+    /* ========== HEADERS ========== */
     .main-header {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1E3A8A;
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
     }
+    
     .sub-header {
-        font-size: 1.2rem;
-        color: #64748B;
-        margin-bottom: 2rem;
+        font-size: 1.25rem;
+        color: #545454;
+        font-weight: 400;
+        margin-bottom: 2.5rem;
+        line-height: 1.6;
     }
+    
+    h1, h2, h3 {
+        color: #545454;
+        font-weight: 700;
+    }
+    
+    /* Page headers with gradient underline */
+    h1::after {
+        content: '';
+        display: block;
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, #12dbb4 0%, #14d8e2 100%);
+        margin-top: 0.75rem;
+        border-radius: 2px;
+    }
+    
+    /* ========== METRIC CARDS ========== */
     .metric-card {
-        background-color: #F8FAFC;
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #14B8A6;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        box-shadow: 0 4px 6px rgba(18, 219, 180, 0.1), 
+                    0 1px 3px rgba(0, 0, 0, 0.08);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
     }
+    
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(18, 219, 180, 0.2), 
+                    0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #12dbb4 0%, #14d8e2 100%);
+    }
+    
+    /* ========== INSIGHT BOX ========== */
     .insight-box {
-        background-color: #FEF3C7;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #F59E0B;
-        margin: 1rem 0;
+        background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 5px solid #12dbb4;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 8px rgba(84, 84, 84, 0.08);
+        position: relative;
     }
+    
+    .insight-box::before {
+        content: '💡';
+        position: absolute;
+        top: 1.5rem;
+        left: -2.5rem;
+        font-size: 2rem;
+    }
+    
+    /* ========== UPLOAD BOX ========== */
     .upload-box {
-        background-color: #EFF6FF;
-        padding: 1.5rem;
-        border-radius: 0.75rem;
-        border: 2px dashed #3B82F6;
-        margin: 1rem 0;
+        background: linear-gradient(135deg, #f0fffe 0%, #f8ffff 100%);
+        padding: 2.5rem;
+        border-radius: 16px;
+        border: 3px dashed #12dbb4;
+        margin: 2rem 0;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
     }
+    
+    .upload-box:hover {
+        background: linear-gradient(135deg, #e6fffc 0%, #f0fffe 100%);
+        border-color: #14d8e2;
+        transform: scale(1.02);
+    }
+    
+    /* ========== SUCCESS BOX ========== */
     .success-box {
-        background-color: #ECFDF5;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #10B981;
-        margin: 1rem 0;
+        background: linear-gradient(135deg, #e6fff9 0%, #f0fffc 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 5px solid #12dbb4;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 8px rgba(18, 219, 180, 0.1);
     }
+    
+    /* ========== ERROR BOX ========== */
     .error-box {
-        background-color: #FEF2F2;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #EF4444;
-        margin: 1rem 0;
+        background: linear-gradient(135deg, #fff0f0 0%, #fff5f5 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 5px solid #ff4444;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 8px rgba(255, 68, 68, 0.1);
     }
+    
+    /* ========== PORTFOLIO CARD ========== */
     .portfolio-card {
-        background-color: #F0FDF4;
-        padding: 1.5rem;
-        border-radius: 0.75rem;
-        border: 1px solid #86EFAC;
-        margin: 0.5rem 0;
-    }
-    .template-box {
-        background-color: #F5F3FF;
-        padding: 1.5rem;
-        border-radius: 0.75rem;
-        border: 1px solid #C4B5FD;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fffd 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        border: 2px solid #12dbb4;
         margin: 1rem 0;
+        box-shadow: 0 4px 12px rgba(18, 219, 180, 0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .portfolio-card:hover {
+        transform: translateX(8px);
+        box-shadow: 0 8px 24px rgba(18, 219, 180, 0.25);
+    }
+    
+    /* ========== TEMPLATE BOX ========== */
+    .template-box {
+        background: linear-gradient(135deg, #f0fffe 0%, #ffffff 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        border: 2px solid #14d8e2;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 12px rgba(20, 216, 226, 0.12);
+    }
+    
+    /* ========== BUTTONS ========== */
+    .stButton > button {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(18, 219, 180, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(18, 219, 180, 0.4);
+        background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%);
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0);
+    }
+    
+    /* Primary button variant */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+    }
+    
+    /* Secondary button variant */
+    .stButton > button[kind="secondary"] {
+        background: linear-gradient(135deg, #545454 0%, #3a3a3a 100%);
+    }
+    
+    /* ========== DOWNLOAD BUTTON ========== */
+    .stDownloadButton > button {
+        background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(20, 216, 226, 0.3);
+    }
+    
+    .stDownloadButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(20, 216, 226, 0.4);
+    }
+    
+    /* ========== INPUTS ========== */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > select {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+        background-color: white;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stNumberInput > div > div > input:focus,
+    .stSelectbox > div > div > select:focus {
+        border-color: #12dbb4;
+        box-shadow: 0 0 0 3px rgba(18, 219, 180, 0.1);
+    }
+    
+    /* ========== TABS ========== */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: transparent;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: transparent;
+        border-radius: 8px 8px 0 0;
+        padding: 12px 24px;
+        color: #545454;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: rgba(18, 219, 180, 0.05);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white !important;
+    }
+    
+    /* ========== DATAFRAME / TABLE ========== */
+    .dataframe {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(84, 84, 84, 0.08);
+    }
+    
+    .dataframe thead tr {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white;
+    }
+    
+    .dataframe thead th {
+        padding: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.875rem;
+    }
+    
+    .dataframe tbody tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    
+    .dataframe tbody tr:hover {
+        background-color: rgba(18, 219, 180, 0.05);
+        transition: background-color 0.2s ease;
+    }
+    
+    .dataframe tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    /* ========== METRICS ========== */
+    [data-testid="stMetricValue"] {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: #545454;
+        font-weight: 600;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    [data-testid="stMetricDelta"] {
+        font-weight: 600;
+    }
+    
+    /* ========== EXPANDER ========== */
+    .streamlit-expanderHeader {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 12px;
+        border: 2px solid #e0e0e0;
+        padding: 1rem;
+        font-weight: 600;
+        color: #545454;
+        transition: all 0.3s ease;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        border-color: #12dbb4;
+        background: linear-gradient(135deg, #f0fffe 0%, #ffffff 100%);
+    }
+    
+    /* ========== PROGRESS BAR ========== */
+    .stProgress > div > div > div {
+        background: linear-gradient(90deg, #12dbb4 0%, #14d8e2 100%);
+        border-radius: 8px;
+    }
+    
+    /* ========== SPINNER ========== */
+    .stSpinner > div {
+        border-top-color: #12dbb4 !important;
+    }
+    
+    /* ========== FILE UPLOADER ========== */
+    [data-testid="stFileUploader"] {
+        border: 3px dashed #12dbb4;
+        border-radius: 16px;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f0fffe 0%, #ffffff 100%);
+        transition: all 0.3s ease;
+    }
+    
+    [data-testid="stFileUploader"]:hover {
+        border-color: #14d8e2;
+        background: linear-gradient(135deg, #e6fffc 0%, #f8ffff 100%);
+    }
+    
+    /* ========== RADIO BUTTONS ========== */
+    .stRadio > label {
+        color: #545454;
+        font-weight: 600;
+    }
+    
+    .stRadio [role="radiogroup"] label {
+        background-color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+        margin: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stRadio [role="radiogroup"] label:hover {
+        border-color: #12dbb4;
+        background-color: rgba(18, 219, 180, 0.05);
+    }
+    
+    .stRadio [role="radiogroup"] label[data-checked="true"] {
+        border-color: #12dbb4;
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white;
+    }
+    
+    /* ========== CHECKBOX ========== */
+    .stCheckbox label {
+        color: #545454;
+        font-weight: 500;
+    }
+    
+    .stCheckbox input[type="checkbox"]:checked {
+        background-color: #12dbb4;
+        border-color: #12dbb4;
+    }
+    
+    /* ========== INFO/WARNING/ERROR MESSAGES ========== */
+    .stAlert {
+        border-radius: 12px;
+        border-left: 5px solid;
+        padding: 1rem 1.5rem;
+    }
+    
+    .stAlert[data-baseweb="notification"] {
+        background-color: rgba(18, 219, 180, 0.1);
+        border-left-color: #12dbb4;
+    }
+    
+    /* ========== CUSTOM SCROLLBAR ========== */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #14d8e2 0%, #12dbb4 100%);
+    }
+    
+    /* ========== TOOLTIPS ========== */
+    [data-testid="stTooltipIcon"] {
+        color: #12dbb4;
+    }
+    
+    /* ========== PLOTLY CHARTS ========== */
+    .js-plotly-plot {
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(84, 84, 84, 0.08);
+    }
+    
+    /* ========== PREMIUM BADGE ========== */
+    .premium-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-left: 0.5rem;
+    }
+    
+    /* ========== DIVIDER ========== */
+    hr {
+        margin: 2rem 0;
+        border: none;
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, #12dbb4 50%, transparent 100%);
+    }
+    
+    /* ========== ANIMATIONS ========== */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .metric-card,
+    .portfolio-card,
+    .template-box {
+        animation: fadeIn 0.6s ease-out;
+    }
+    
+    /* ========== RESPONSIVE DESIGN ========== */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2rem;
+        }
+        
+        .sub-header {
+            font-size: 1rem;
+        }
+        
+        .metric-card,
+        .portfolio-card {
+            padding: 1rem;
+        }
+        
+        .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -129,7 +662,7 @@ def load_data(include_all=False):
     Args:
         include_all: If True, includes all trials. If False, only trials with known outcomes.
     """
-    data_dir = Path(__file__).parent.parent.parent / 'data' / 'processed'
+    data_dir = Path(__file__).parent / 'data' / 'processed'
     feature_files = list(data_dir.glob('clinical_trials_features_*.csv'))
     if not feature_files:
         return None
@@ -165,19 +698,30 @@ def load_data(include_all=False):
 @st.cache_resource
 def load_models():
     """Load trained models (indication-specific if available, otherwise standard)"""
-    model_dir = Path(__file__).parent.parent.parent / 'data' / 'models'
+    model_dir = Path(__file__).parent / 'data' / 'models'
     
     # Try to load indication-specific models first
     try:
         import sys
-        sys.path.append(str(Path(__file__).parent.parent / 'models'))
-        from indication_specific_models import IndicationSpecificModelEngine
+        
+        # Add src directory to Python path for proper imports
+        src_dir = Path(__file__).parent / 'src'
+        if str(src_dir) not in sys.path:
+            sys.path.insert(0, str(src_dir))
+        
+        # Import using package structure
+        from models.indication_specific_models import IndicationSpecificModelEngine
         
         indication_engine = IndicationSpecificModelEngine()
         indication_engine.load_models(model_dir)
         
+        print("✅ Loaded indication-specific models")
+        
         # Return indication engine and feature names
         return indication_engine, None, indication_engine.feature_names
+    except ImportError as e:
+        print(f"⚠️  Could not import indication models: {e}")
+        print("   Falling back to standard models...")
     except Exception as e:
         print(f"⚠️  Indication models not available: {e}")
         print("   Falling back to standard models...")
@@ -339,7 +883,8 @@ def batch_predict(df_upload: pd.DataFrame, model, feature_names: list) -> pd.Dat
     results = []
     for idx, row in df_upload.iterrows():
         feats       = row_to_features(row)
-        succ, risk  = predict_single(feats, model, feature_names)
+        result = predict_single(feats, model, feature_names)
+        succ, risk = result[0], result[1]
         results.append({
             'row_index':         idx,
             'trial_name':        row.get('brief_title', row.get('trial_name', f'Trial {idx+1}')),
@@ -383,12 +928,42 @@ def create_sankey_diagram(df):
                    'rgba(20,184,166,0.3)','rgba(239,68,68,0.3)','rgba(20,184,166,0.5)']
 
     fig = go.Figure(data=[go.Sankey(
-        node=dict(pad=15, thickness=20, line=dict(color="black", width=0.5),
-                  label=labels,
-                  color=["#1E3A8A","#14B8A6","#10B981","#14B8A6","#10B981","#EF4444"]),
-        link=dict(source=sources, target=targets, value=values, color=colors_link)
+        node=dict(
+            pad=15, 
+            thickness=20, 
+            line=dict(color="black", width=0.5),
+            label=labels,
+            color=["#1E3A8A","#14B8A6","#10B981","#14B8A6","#10B981","#EF4444"],
+            hovertemplate='%{label}<br>%{value}<extra></extra>'
+        ),
+        link=dict(source=sources, target=targets, value=values, color=colors_link),
+        textfont=dict(
+            color="#2d3748",
+            size=13,
+            family="Inter, system-ui, -apple-system, sans-serif"
+        ),
+        valueformat=".0f"
     )])
-    fig.update_layout(title_text="Clinical Trial Phase Attrition", font_size=12, height=400)
+    
+    fig.update_layout(
+        title_text="Clinical Trial Phase Attrition",
+        font=dict(
+            family="Inter, system-ui, -apple-system, sans-serif",
+            size=13,
+            color="#2d3748"
+        ),
+        height=400,
+        margin=dict(l=10, r=10, t=40, b=10),
+        paper_bgcolor='white',
+        plot_bgcolor='white'
+    )
+    
+    # Add custom config to disable text outline
+    config = {
+        'displayModeBar': False,
+        'staticPlot': False
+    }
+    
     return fig
 
 
@@ -458,47 +1033,329 @@ def generate_template_csv() -> bytes:
 # MAIN APP
 # ---------------------------------------------------------------------------
 def main():
-    # ---- SIDEBAR ----
-    st.sidebar.markdown("## 🧬 Clinical Trial Risk Intelligence", unsafe_allow_html=False)
-    st.sidebar.markdown("---")
+    # ====================
+    # LEGAL PAGE ROUTING (NEW) — must run before auth check
+    # ====================
+    if LEGAL_AVAILABLE and handle_legal_page_routing():
+        return
+
+    # ====================
+    # AUTHENTICATION CHECK (NEW)
+    # ====================
+    if AUTH_ENABLED and not auth_manager.is_authenticated():
+        auth_manager.render_login_page()
+        return
+
+    # ====================
+    # PAYMENT SUCCESS BANNER (NEW)
+    # ====================
+    if PAYMENTS_AVAILABLE:
+        render_payment_success_banner()
+
+    # ====================
+    # DISCLAIMER BANNER (NEW)
+    # ====================
+    if LEGAL_AVAILABLE:
+        render_disclaimer_banner()
     
-    # Data loading option
-    st.sidebar.markdown("### 📊 Dataset Options")
-    include_all_trials = st.sidebar.checkbox(
-        "Load all trials (8,471)",
-        value=False,
-        help="Include trials without outcome data. Useful for showing full dataset size. Uncheck to only use trials with known outcomes (5,745) for training."
-    )
-    st.sidebar.markdown("---")
+    # ---- ENCINITA HORIZONTAL NAVBAR ----
+    st.markdown("""
+    <style>
+        /* CRITICAL: Remove ALL Streamlit selectbox styling and ensure full text visibility */
+        div[data-testid="stSelectbox"] {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            width: 100% !important;
+        }
+        
+        div[data-testid="stSelectbox"] > label {
+            display: none !important;
+        }
+        
+        div[data-testid="stSelectbox"] > div {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        div[data-testid="stSelectbox"] > div > div {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0.2rem 0.6rem !important;
+            margin: 0 !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            color: #545454 !important;
+            line-height: 1.2 !important;
+            min-height: 32px !important;
+            height: 32px !important;
+            overflow: visible !important;
+            white-space: nowrap !important;
+            text-overflow: clip !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            text-align: right !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+        }
+        
+        div[data-testid="stSelectbox"] > div > div:hover {
+            background: rgba(18, 219, 180, 0.08) !important;
+            border-radius: 6px !important;
+            color: #12dbb4 !important;
+        }
+        
+        /* Remove any inherited shadows or borders */
+        [data-baseweb="select"] {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+            width: 100% !important;
+        }
+        
+        [data-baseweb="select"] > div {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0.2rem 0.6rem !important;
+            line-height: 1.2 !important;
+            overflow: visible !important;
+            white-space: nowrap !important;
+            width: 100% !important;
+            text-align: right !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+        }
+        
+        /* Make all columns equal width */
+        [data-testid="column"]:not(:first-child) {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+        }
+        
+        /* Adjust column padding for tighter layout */
+        [data-testid="column"] {
+            padding: 0.1rem !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
-    # ---- load core data & models ----
-    df = load_data(include_all=include_all_trials)
+    # Add off-white background container for navbar
+    st.markdown("""
+    <div style='background-color: #f8f9fa; padding: 1rem 2rem; margin: -6rem -6rem 2rem -6rem; border-bottom: 1px solid #e0e0e0;'>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Move cursor back up into the navbar area
+    st.markdown("<div style='margin-top: -5.5rem;'></div>", unsafe_allow_html=True)
+    
+    # Navbar with logo and menus in one row - ALL MENU COLUMNS EQUAL WIDTH
+    col_logo, col_core, col_analytics, col_enterprise, col_premium, col_more = st.columns([1.3, 1.2, 1.2, 1.2, 1.2, 1.2])
+    
+    with col_logo:
+        # Fix logo container clipping and ensure no rounded corners
+        st.markdown("""
+        <style>
+            /* Remove border-radius that clips logo corners */
+            [data-testid="stImage"] {
+                overflow: visible !important;
+                border-radius: 0 !important;
+            }
+            
+            [data-testid="stImageContainer"] {
+                overflow: visible !important;
+                border-radius: 0 !important;
+            }
+            
+            [data-testid="stImage"] img {
+                border-radius: 0 !important;
+            }
+            
+            /* Ensure logo column has proper height and centering */
+            [data-testid="column"]:first-child {
+                overflow: visible !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+            
+            [data-testid="column"]:first-child > div {
+                overflow: visible !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        try:
+            # Try multiple paths for logo (SVG version)
+            logo_paths = [
+                "encinitalogo.svg",
+                "/mnt/user-data/outputs/encinitalogo.svg",
+                str(Path(__file__).parent / "encinitalogo.svg"),
+                str(Path(__file__).parent / "encinitalogo.svg")
+            ]
+            logo_loaded = False
+            for logo_path in logo_paths:
+                try:
+                    st.image(logo_path, width=105)
+                    logo_loaded = True
+                    break
+                except:
+                    continue
+            
+            if not logo_loaded:
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #12dbb4 0%, #14d8e2 100%); 
+                            padding: 0.4rem 0.8rem; 
+                            border-radius: 0; 
+                            text-align: center;">
+                    <p style="color: white; margin: 0; font-weight: 800; font-size: 0.95rem;">ENCINITA</p>
+                </div>
+                """, unsafe_allow_html=True)
+        except:
+            st.markdown("**Encinita**")
+    
+    # Initialize session state for default page
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "📊 Overview"
+    
+    # Increase padding to properly center-align dropdowns with logo vertical center
+    # Logo SVG is taller, needs more padding (1.5rem instead of 1rem)
+    with col_core:
+        st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
+        core_page = st.selectbox(
+            "Core",
+            ["Core", "📊 Overview", "🎯 Risk Predictor", "📤 Upload & Batch", "📁 Portfolio Analyzer"],
+            index=0,
+            key="core_nav"
+        )
+        if core_page != "Core":
+            st.session_state.current_page = core_page
+    
+    with col_analytics:
+        st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
+        analytics_page = st.selectbox(
+            "Analytics", 
+            ["Analytics", "🔍 Deep Analytics", "📈 Model Performance"],
+            index=0,
+            key="analytics_nav"
+        )
+        if analytics_page != "Analytics":
+            st.session_state.current_page = analytics_page
+    
+    with col_enterprise:
+        st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
+        enterprise_page = st.selectbox(
+            "Enterprise",
+            ["Enterprise", "⚡ Real-Time Monitoring", "🏥 Site Intelligence"],
+            index=0,
+            key="enterprise_nav"
+        )
+        if enterprise_page != "Enterprise":
+            st.session_state.current_page = enterprise_page
+    
+    with col_premium:
+        st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
+        premium_page = st.selectbox(
+            "Premium",
+            ["Premium", "🎯 Competitive Intelligence", "💰 Financial Calculator", "🔬 Protocol Optimizer"],
+            index=0,
+            key="premium_nav"
+        )
+        if premium_page != "Premium":
+            st.session_state.current_page = premium_page
+    
+    with col_more:
+        st.markdown("<div style='padding-top: 1.5rem;'></div>", unsafe_allow_html=True)
+        other_page = st.selectbox(
+            "More",
+            ["More", "📤 Export Center", "💎 Pricing", "ℹ️ About"],
+            index=0,
+            key="other_nav"
+        )
+        if other_page != "More":
+            st.session_state.current_page = other_page
+    
+    # Get current page from session state
+    page = st.session_state.current_page
+    
+    # Map short names back to full names for compatibility
+    page_mapping = {
+        "📊 Overview": "📊 Overview",
+        "🎯 Risk Predictor": "🎯 Risk Predictor",
+        "📤 Upload & Batch": "📤 Upload & Batch Predict",
+        "📁 Portfolio Analyzer": "📁 Portfolio Analyzer",
+        "🔍 Deep Analytics": "🔍 Deep Dive Analytics",
+        "📈 Model Performance": "📈 Model Performance",
+        "⚡ Real-Time Monitoring": "⚡ Real-Time Monitoring 🚀",
+        "🏥 Site Intelligence": "🏥 Site Intelligence 🚀",
+        "🎯 Competitive Intelligence": "🎯 Competitive Intelligence 💎",
+        "💰 Financial Calculator": "💰 Financial Calculator 💎",
+        "🔬 Protocol Optimizer": "🔬 Protocol Optimizer 💎",
+        "📤 Export Center": "📤 Export Center",
+        "💎 Pricing": "💎 Pricing",
+        "ℹ️ About": "ℹ️ About"
+    }
+    
+    page = page_mapping.get(page, page)
+    
+    # ====================
+    # USER INFO & STATUS (NEW)
+    # ====================
+    status_cols = st.columns([8, 1, 1, 2])
+    
+    with status_cols[1]:
+        # Network status indicator
+        if NETWORK_UTILS_AVAILABLE:
+            try:
+                net = NetworkUtils()
+                if net.test_connection():
+                    st.markdown('<div style="text-align: center; padding: 0.5rem;">🟢</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<div style="text-align: center; padding: 0.5rem;">🔴</div>', unsafe_allow_html=True)
+            except:
+                pass
+    
+    with status_cols[2]:
+        # Data freshness indicator
+        try:
+            model_dir = Path(__file__).parent / 'data' / 'models'
+            model_files = list(model_dir.glob('lightgbm_*.joblib'))
+            if model_files:
+                latest = max(model_files, key=lambda p: p.stat().st_mtime)
+                age_days = int((datetime.now().timestamp() - latest.stat().st_mtime) / 86400)
+                color = '#10b981' if age_days < 7 else ('#f59e0b' if age_days < 30 else '#ef4444')
+                st.markdown(f'<div style="text-align: center; padding: 0.5rem; color: {color};">📊 {age_days}d</div>', unsafe_allow_html=True)
+        except:
+            pass
+    
+    with status_cols[3]:
+        # User info and logout
+        if AUTH_ENABLED and auth_manager.is_authenticated():
+            tier_name = auth_manager.get_tier_features()['name']
+            tier_color = '#10b981' if tier_name != 'Free' else '#64748b'
+            st.markdown(f"""
+            <div style="text-align: right; padding: 0.5rem; font-size: 0.9rem;">
+                <span style="color: #545454;">👤 {st.session_state.username}</span>
+                <span style="color: {tier_color}; font-weight: 600; margin-left: 0.5rem;">{tier_name}</span>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown("<div style='margin: 1rem 0; border-bottom: 1px solid #e0e0e0;'></div>", unsafe_allow_html=True)
+    
+    # ---- load core data & models (ALWAYS load all trials) ----
+    df = load_data(include_all=True)  # Always load all trials
     xgb_model, lgb_model, feature_names = load_models()
-
-    page = st.sidebar.radio("Navigation", [
-        "📊 Overview",
-        "🎯 Risk Predictor",
-        "📤 Upload & Batch Predict",
-        "📁 Portfolio Analyzer",
-        "🔍 Deep Dive Analytics",
-        "📈 Model Performance",
-        "---",
-        "⚡ Real-Time Monitoring 🚀",
-        "🏥 Site Intelligence 🚀",
-        "---",
-        "🎯 Competitive Intelligence 💎",
-        "💰 Financial Calculator 💎",
-        "🔬 Protocol Optimizer 💎",
-        "📤 Export Center",
-        "💎 Pricing"
-    ])
-
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("**Data Sources**")
-    st.sidebar.markdown("• Public benchmark: ClinicalTrials.gov (2 000 trials)")
-    st.sidebar.markdown("• Your data: Upload CSV on the **Upload** page")
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("*v2.0 — Supports proprietary data upload*", unsafe_allow_html=False)
 
     # ====================
     # PAGE 1: OVERVIEW
@@ -525,6 +1382,29 @@ def main():
         with c1:
             st.plotly_chart(create_success_rate_chart(df), width="stretch")
         with c2:
+            # Add CSS to fix Sankey text rendering (remove stroke/outline)
+            st.markdown("""
+            <style>
+                /* Remove text stroke/outline from Plotly Sankey node labels */
+                .js-plotly-plot .sankey text {
+                    stroke: none !important;
+                    stroke-width: 0 !important;
+                    paint-order: stroke !important;
+                    fill: #2d3748 !important;
+                    font-family: Inter, system-ui, -apple-system, sans-serif !important;
+                    font-size: 13px !important;
+                    font-weight: 500 !important;
+                }
+                
+                /* Ensure no text shadow or multiple layers */
+                .js-plotly-plot .sankey .sankey-node text,
+                .js-plotly-plot .sankey-node-label {
+                    text-shadow: none !important;
+                    stroke: none !important;
+                    stroke-width: 0 !important;
+                }
+            </style>
+            """, unsafe_allow_html=True)
             st.plotly_chart(create_sankey_diagram(df), width="stretch")
 
         # Sponsor benchmark
@@ -935,7 +1815,7 @@ def main():
     # ====================
     # PAGE 5: DEEP DIVE  (preserved + therapeutic area filter fix)
     # ====================
-    elif page == "🔍 Deep Dive Analytics":
+    elif page == "🔍 Deep Dive Analytics" or page == "🔍 Deep Analytics":
         st.header("Deep Dive Analytics")
 
         if df is None:
@@ -1009,10 +1889,21 @@ def main():
             st.warning("Models not found. Run `train_models.py`.")
             st.stop()
 
+        # Add Model Health Dashboard (NEW)
+        try:
+            from model_monitoring import render_model_health_dashboard
+            
+            with st.expander("🏥 Model Health Dashboard", expanded=False):
+                render_model_health_dashboard()
+            
+            st.markdown("---")
+        except Exception as e:
+            pass  # Silently skip if monitoring not available
+        
         st.markdown("Our predictive models achieve **78%+ accuracy** identifying high-risk trials 18 months before completion.")
 
         # metrics table
-        model_dir = Path(__file__).parent.parent.parent / 'data' / 'models'
+        model_dir = Path(__file__).parent / 'data' / 'models'
         metrics_files = list(model_dir.glob('metrics_*.json'))
         if metrics_files:
             with open(max(metrics_files, key=lambda p: p.stat().st_mtime), 'r') as f:
@@ -1113,174 +2004,488 @@ def main():
     
     elif page == "💎 Pricing":
         render_pricing_page()
+    
+    elif page == "ℹ️ About":
+        render_about_page()
+
+
+def render_about_page():
+    """About page explaining all features"""
+    st.header("ℹ️ About Encinita")
+    st.markdown("**AI-Powered Clinical Trial Intelligence & Portfolio Analytics Platform**")
+    
+    st.markdown("---")
+    
+    # Overview
+    st.subheader("Platform Overview")
+    st.markdown("""
+    Encinita leverages machine learning trained on **8,500+ clinical trials** from ClinicalTrials.gov 
+    to predict trial success probability and assess risk across your portfolio. Make data-driven decisions 
+    with 78-84% prediction accuracy.
+    """)
+    
+    st.markdown("---")
+    
+    # Core Features
+    st.subheader("📊 Core Features")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        **🎯 AI Risk Predictor**
+        - Success probability prediction (78-84% accuracy)
+        - Risk score calculation
+        - Indication-specific models
+        - Phase 2/3 trial analysis
+        - Factor contribution breakdown
+        
+        **📤 Batch Upload & Analysis**
+        - CSV batch predictions
+        - Portfolio-wide risk assessment
+        - Automated scoring
+        - Export predictions to CSV
+        """)
+    
+    with col2:
+        st.markdown("""
+        **📁 Portfolio Analyzer**
+        - Multi-trial portfolio management
+        - Risk distribution analysis
+        - Comparative benchmarking
+        - Therapeutic area insights
+        
+        **🔍 Deep Analytics**
+        - Advanced filtering & segmentation
+        - Success rate by phase, indication, sponsor
+        - Interactive visualizations
+        - Custom cohort analysis
+        """)
+    
+    st.markdown("---")
+    
+    # Performance & Data
+    st.subheader("📈 Model Performance")
+    st.markdown("""
+    **Machine Learning Models:**
+    - XGBoost & LightGBM ensemble
+    - Indication-specific models for Oncology, CNS, Cardiovascular, Autoimmune
+    - ROC-AUC: 0.78-0.84
+    - Calibrated probability scores
+    
+    **Training Data:**
+    - 8,471 total trials (Phase 2-3, 2010-2025)
+    - 5,745 trials with known outcomes
+    - ClinicalTrials.gov verified data
+    - Real-world success rates: Phase 2 (45%), Phase 3 (62%)
+    """)
+    
+    st.markdown("---")
+    
+    # Premium Features
+    st.subheader("🚀 Enterprise Features")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        **⚡ Real-Time Monitoring** 🚀
+        - Live trial status tracking
+        - Automated alerts for milestones
+        - Enrollment monitoring
+        - Protocol amendments tracking
+        
+        **🏥 Site Intelligence** 🚀
+        - Site performance prediction
+        - Enrollment velocity forecasting
+        - Geographic optimization
+        - Site selection recommendations
+        """)
+    
+    with col2:
+        st.markdown("""
+        **🎯 Competitive Intelligence** 💎
+        - Competitor pipeline analysis
+        - Market positioning insights
+        - Therapeutic area trends
+        - Strategic benchmarking
+        
+        **💰 Financial Calculator** 💎
+        - NPV & ROI modeling
+        - Cost-benefit analysis
+        - Risk-adjusted valuations
+        - Portfolio optimization
+        """)
+    
+    st.markdown("""
+    **🔬 Protocol Optimizer** 💎
+    - Design recommendations
+    - Enrollment optimization
+    - Endpoint selection guidance
+    - Statistical power analysis
+    """)
+    
+    st.markdown("---")
+    
+    # Use Cases
+    st.subheader("💼 Use Cases")
+    
+    st.markdown("""
+    **Portfolio Managers**
+    - Prioritize trials for funding
+    - Optimize portfolio risk/return
+    - Track performance vs benchmarks
+    
+    **Clinical Operations**
+    - Identify high-risk trials early
+    - Implement mitigation strategies
+    - Monitor trial health metrics
+    
+    **Business Development**
+    - Evaluate acquisition targets
+    - Assess partnership opportunities
+    - Validate deal assumptions
+    
+    **Investors & Analysts**
+    - Due diligence on biotech pipelines
+    - Risk assessment for investments
+    - Portfolio valuation modeling
+    """)
+    
+    st.markdown("---")
+    
+    # Technology
+    st.subheader("🔬 Technology Stack")
+    st.markdown("""
+    - **Machine Learning:** XGBoost, LightGBM, scikit-learn
+    - **Data Processing:** pandas, NumPy
+    - **Visualization:** Plotly, Streamlit
+    - **Data Sources:** ClinicalTrials.gov API
+    - **Deployment:** Streamlit Cloud, Python 3.11+
+    """)
+    
+    st.markdown("---")
+    
+    # Contact
+    st.subheader("📧 Contact & Support")
+    st.markdown("""
+    For enterprise inquiries, custom deployments, or technical support:
+    
+    - **Email:** support@encinita.ai
+    - **Documentation:** docs.encinita.ai
+    - **Status:** status.encinita.ai
+    
+    © 2025 Encinita. All rights reserved.
+    """)
 
 
 def render_pricing_page():
-    """Pricing page for premium tiers"""
-    st.header("💎 Pricing & Plans")
-    st.markdown("Choose the plan that fits your clinical development needs")
-    
-    # Premium callout
+    """Pricing & Plans page — wired to Stripe for real payment collection."""
+
+    # ----------------------------------------------------------------
+    # Resolve current user context
+    # ----------------------------------------------------------------
+    current_tier  = auth_manager.get_current_tier() if AUTH_ENABLED else "free"
+    current_email = ""
+    if AUTH_ENABLED and auth_manager.is_authenticated():
+        username = st.session_state.get("username", "")
+        try:
+            current_email = auth_manager.users.get(username, {}).get("email", "")
+        except Exception:
+            pass
+
+    # Use app base URL for Stripe success/cancel redirects
+    app_url = st.query_params.get("app_url", "https://your-app.streamlit.app")
+
+    # ----------------------------------------------------------------
+    # Hero
+    # ----------------------------------------------------------------
     st.markdown("""
-    <div style="background-color: #EFF6FF; padding: 1.5rem; border-radius: 0.75rem; border: 2px solid #3B82F6; margin: 1rem 0;">
-        <h3 style="color: #1E3A8A; margin-top: 0;">🚀 Transform Your Clinical Development Strategy</h3>
-        <p>Join leading biotech and pharma companies using AI-powered trial intelligence to reduce risk and optimize portfolios.</p>
-    </div>
+    <style>
+        .price-card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px 24px 24px;
+            border: 2px solid #e2e8f0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .price-card.popular {
+            border-color: #12dbb4;
+            box-shadow: 0 0 0 4px rgba(18,219,180,0.1);
+        }
+        .price-card .badge {
+            background: linear-gradient(90deg,#12dbb4,#14d8e2);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 3px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .price-card h3 { margin: 0 0 4px; color: #1e293b; font-size: 1.25rem; }
+        .price-card .price { font-size: 1.9rem; font-weight: 800; color: #1e293b; margin: 6px 0 2px; }
+        .price-card .price span { font-size: 0.9rem; font-weight: 400; color: #94a3b8; }
+        .price-card .billed { font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px; }
+        .price-card hr { border: none; border-top: 1px solid #f1f5f9; margin: 14px 0; }
+        .price-card ul { padding-left: 0; list-style: none; flex: 1; margin: 0 0 20px; }
+        .price-card ul li { font-size: 0.88rem; color: #475569; padding: 4px 0; }
+        .price-card ul li::before { content: "✓ "; color: #12dbb4; font-weight: 700; }
+        .current-plan-badge {
+            background: #f0fdf4; color: #16a34a; font-weight: 600;
+            font-size: 0.82rem; padding: 6px 12px; border-radius: 8px;
+            text-align: center; border: 1px solid #bbf7d0;
+        }
+    </style>
     """, unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown("""
-        <div style="background-color: #F8FAFC; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #E2E8F0; height: 100%;">
-            <h3 style="color: #64748B;">Free</h3>
-            <h2 style="color: #1E3A8A;">$0<span style="font-size: 1rem; color: #64748B;">/month</span></h2>
-            <hr style="border-color: #E2E8F0;">
-            <p>✅ Basic risk predictions</p>
-            <p>✅ 5 trials/month</p>
-            <p>✅ Public benchmarks</p>
-            <p>✅ CSV upload (limited)</p>
-            <p>✅ Community support</p>
-            <br>
-            <p style="color: #10B981; font-weight: bold;">✓ Current Plan</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        <div style="background-color: #F0FDF4; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #14B8A6; height: 100%;">
-            <h3 style="color: #14B8A6;">Professional</h3>
-            <h2 style="color: #1E3A8A;">$2,083<span style="font-size: 1rem; color: #64748B;">/month</span></h2>
-            <p style="font-size: 0.9rem; color: #64748B;">Billed annually at $25,000</p>
-            <hr style="border-color: #14B8A6;">
-            <p>✅ <strong>Unlimited predictions</strong></p>
-            <p>✅ <strong>Competitive Intel</strong> (3 companies)</p>
-            <p>✅ <strong>Financial Calculator</strong></p>
-            <p>✅ <strong>Real-Time Monitoring</strong> (10 trials)</p>
-            <p>✅ Excel exports</p>
-            <p>✅ Email support</p>
-            <br>
-            <a href="mailto:ryan@yourcompany.com?subject=Professional Tier Inquiry" style="background-color: #14B8A6; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; display: inline-block;">Contact Sales</a>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-        <div style="background-color: #FEF3C7; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #F59E0B; height: 100%;">
-            <h3 style="color: #F59E0B;">Enterprise</h3>
-            <h2 style="color: #1E3A8A;">$6,250<span style="font-size: 1rem; color: #64748B;">/month</span></h2>
-            <p style="font-size: 0.9rem; color: #64748B;">Billed annually at $75,000</p>
-            <hr style="border-color: #F59E0B;">
-            <p>✅ <strong>Everything in Professional</strong></p>
-            <p>✅ <strong>AI Protocol Optimizer</strong></p>
-            <p>✅ <strong>Regulatory Advisor</strong></p>
-            <p>✅ <strong>Indication Recommender</strong></p>
-            <p>✅ PowerPoint/PDF reports</p>
-            <p>✅ Priority support</p>
-            <p>✅ Quarterly business reviews</p>
-            <br>
-            <a href="mailto:ryan@yourcompany.com?subject=Enterprise Tier Inquiry" style="background-color: #F59E0B; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; display: inline-block;">Contact Sales</a>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown("""
-        <div style="background-color: #EFF6FF; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #3B82F6; height: 100%;">
-            <h3 style="color: #3B82F6;">Enterprise+</h3>
-            <h2 style="color: #1E3A8A;">$12,500<span style="font-size: 1rem; color: #64748B;">/month</span></h2>
-            <p style="font-size: 0.9rem; color: #64748B;">Billed annually at $150,000</p>
-            <hr style="border-color: #3B82F6;">
-            <p>✅ <strong>Everything in Enterprise</strong></p>
-            <p>✅ <strong>API Access</strong> (1M requests)</p>
-            <p>✅ <strong>Custom Models</strong></p>
-            <p>✅ <strong>White-label option</strong></p>
-            <p>✅ Dedicated CSM</p>
-            <p>✅ 20 hours consultation</p>
-            <p>✅ Custom integrations</p>
-            <br>
-            <a href="mailto:ryan@yourcompany.com?subject=Enterprise+ Tier Inquiry" style="background-color: #3B82F6; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; display: inline-block;">Contact Sales</a>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Value proposition
+
+    st.markdown("## 💎 Pricing & Plans")
+    st.markdown("Transparent pricing for every stage of clinical development.")
+
     st.markdown("---")
-    st.subheader("Why Clinical Trial Intelligence?")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
+
+    col_free, col_pro, col_ent, col_plus = st.columns(4)
+
+    # ----------------------------------------------------------------
+    # FREE
+    # ----------------------------------------------------------------
+    with col_free:
         st.markdown("""
-        ### 🎯 Predictive, Not Descriptive
-        Unlike competitors who just track trials, we predict outcomes 18 months in advance using AI trained on 2,000+ studies.
-        """)
-    
-    with col2:
+        <div class="price-card">
+            <h3>Free</h3>
+            <div class="price">$0<span> / mo</span></div>
+            <div class="billed">Forever free</div>
+            <hr>
+            <ul>
+                <li>5 predictions / month</li>
+                <li>Public benchmark data</li>
+                <li>Basic risk scores</li>
+                <li>CSV upload (limited)</li>
+                <li>Community support</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if current_tier == "free":
+            st.markdown('<div class="current-plan-badge">✓ Your current plan</div>', unsafe_allow_html=True)
+
+    # ----------------------------------------------------------------
+    # PROFESSIONAL
+    # ----------------------------------------------------------------
+    with col_pro:
         st.markdown("""
-        ### 💰 Proven ROI
-        Average Phase 2 costs $13M. If we help avoid one failure, that's a 500X return on Professional tier investment.
-        """)
-    
-    with col3:
+        <div class="price-card popular">
+            <div class="badge">MOST POPULAR</div>
+            <h3>Professional</h3>
+            <div class="price">$2,083<span> / mo</span></div>
+            <div class="billed">Billed annually · $25,000 / yr</div>
+            <hr>
+            <ul>
+                <li>Unlimited predictions</li>
+                <li>Competitive Intel (3 co.)</li>
+                <li>Financial Calculator</li>
+                <li>Real-Time Monitoring (10)</li>
+                <li>Excel exports</li>
+                <li>Email support</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if current_tier == "professional":
+            st.markdown('<div class="current-plan-badge">✓ Your current plan</div>', unsafe_allow_html=True)
+        elif current_tier == "free":
+            if PAYMENTS_AVAILABLE:
+                render_upgrade_button("professional", current_email, app_url)
+            else:
+                st.markdown(
+                    '<a href="mailto:sales@encinitas.ai?subject=Professional%20Tier%20Inquiry" '
+                    'style="background:linear-gradient(90deg,#12dbb4,#14d8e2);color:white;'
+                    'padding:10px 18px;border-radius:8px;text-decoration:none;'
+                    'font-weight:600;display:block;text-align:center;font-size:0.9rem;">'
+                    'Contact Sales</a>',
+                    unsafe_allow_html=True,
+                )
+
+    # ----------------------------------------------------------------
+    # ENTERPRISE
+    # ----------------------------------------------------------------
+    with col_ent:
         st.markdown("""
-        ### ⚡ Real-Time Intelligence
-        Get instant insights vs. waiting weeks for consultant reports or quarterly database updates.
-        """)
-    
+        <div class="price-card">
+            <h3>Enterprise</h3>
+            <div class="price">$6,250<span> / mo</span></div>
+            <div class="billed">Billed annually · $75,000 / yr</div>
+            <hr>
+            <ul>
+                <li>Everything in Professional</li>
+                <li>AI Protocol Optimizer</li>
+                <li>Regulatory Advisor</li>
+                <li>Competitive Intel (10 co.)</li>
+                <li>PowerPoint / PDF exports</li>
+                <li>Priority support</li>
+                <li>Quarterly business reviews</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if current_tier == "enterprise":
+            st.markdown('<div class="current-plan-badge">✓ Your current plan</div>', unsafe_allow_html=True)
+        elif current_tier in ("free", "professional"):
+            if PAYMENTS_AVAILABLE:
+                render_upgrade_button("enterprise", current_email, app_url)
+            else:
+                st.markdown(
+                    '<a href="mailto:sales@encinitas.ai?subject=Enterprise%20Tier%20Inquiry" '
+                    'style="background:linear-gradient(90deg,#12dbb4,#14d8e2);color:white;'
+                    'padding:10px 18px;border-radius:8px;text-decoration:none;'
+                    'font-weight:600;display:block;text-align:center;font-size:0.9rem;">'
+                    'Contact Sales</a>',
+                    unsafe_allow_html=True,
+                )
+
+    # ----------------------------------------------------------------
+    # ENTERPRISE+
+    # ----------------------------------------------------------------
+    with col_plus:
+        st.markdown("""
+        <div class="price-card">
+            <h3>Enterprise+</h3>
+            <div class="price">$12,500<span> / mo</span></div>
+            <div class="billed">Billed annually · $150,000 / yr</div>
+            <hr>
+            <ul>
+                <li>Everything in Enterprise</li>
+                <li>API access (1 M req / mo)</li>
+                <li>Custom model training</li>
+                <li>White-label option</li>
+                <li>Dedicated CSM</li>
+                <li>20 hrs expert consultation</li>
+                <li>Custom integrations</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if current_tier == "enterprise_plus":
+            st.markdown('<div class="current-plan-badge">✓ Your current plan</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(
+                '<a href="mailto:sales@encinitas.ai?subject=Enterprise%2B%20Tier%20Inquiry" '
+                'style="background:linear-gradient(90deg,#12dbb4,#14d8e2);color:white;'
+                'padding:10px 18px;border-radius:8px;text-decoration:none;'
+                'font-weight:600;display:block;text-align:center;font-size:0.9rem;">'
+                'Contact Sales</a>',
+                unsafe_allow_html=True,
+            )
+
+    # ----------------------------------------------------------------
+    # Billing portal link for paid users
+    # ----------------------------------------------------------------
+    if current_tier not in ("free",) and PAYMENTS_AVAILABLE:
+        st.markdown("---")
+        st.markdown("**Manage your subscription:**")
+        customer_id = ""
+        if AUTH_ENABLED and auth_manager.is_authenticated():
+            username = st.session_state.get("username", "")
+            try:
+                customer_id = auth_manager.users.get(username, {}).get("stripe_customer_id", "")
+            except Exception:
+                pass
+        if customer_id:
+            render_billing_portal_link(customer_id, app_url)
+        else:
+            st.caption("Contact sales@encinitas.ai to manage your billing.")
+
+    # ----------------------------------------------------------------
+    # Stripe setup notice (shown when keys not yet configured)
+    # ----------------------------------------------------------------
+    if not PAYMENTS_AVAILABLE:
+        st.info(
+            "💳 **Payment collection is ready — Stripe keys not yet configured.**  \n"
+            "Add your keys to `.streamlit/secrets.toml` under `[stripe]` to activate "
+            "one-click upgrades. See `STRIPE_SETUP.md` for instructions.",
+            icon="ℹ️",
+        )
+
+    # ----------------------------------------------------------------
+    # ROI & Value Props
+    # ----------------------------------------------------------------
+    st.markdown("---")
+    st.markdown("### Why Encinitas?")
+    r1, r2, r3 = st.columns(3)
+    with r1:
+        st.markdown("**🎯 Predictive, not descriptive**  \nPredict outcomes 18 months before completion — not just track what already happened.")
+    with r2:
+        st.markdown("**💰 Proven ROI**  \nAverage Phase 2 costs $13 M. Avoiding one failure pays for 500× the Professional tier.")
+    with r3:
+        st.markdown("**⚡ Real-time intelligence**  \nInstant AI insights vs. weeks waiting for consultant reports or quarterly database updates.")
+
+    # ----------------------------------------------------------------
     # FAQ
+    # ----------------------------------------------------------------
     st.markdown("---")
-    st.subheader("Frequently Asked Questions")
-    
-    with st.expander("Can I try before buying?"):
+    st.markdown("### Frequently Asked Questions")
+
+    with st.expander("How is pricing structured?"):
+        st.markdown("All plans are billed annually. We don't offer monthly billing at this time. Contact sales for multi-year discounts.")
+
+    with st.expander("What kind of companies use Encinitas?"):
         st.markdown("""
-        Yes! The free tier gives you 5 predictions/month to test the platform. 
-        We also offer 90-day pilots for Professional tier at 50% off for qualified customers.
+        - **Biotech companies** (Series B → IPO) managing 3–20 active trials
+        - **Pharma portfolio teams** allocating R&D budget across indications
+        - **Investment firms** (VCs, crossover funds) running clinical due diligence
+        - **CROs and consultants** differentiating with AI-powered deliverables
         """)
-    
-    with st.expander("What kind of companies use this?"):
-        st.markdown("""
-        Our customers include:
-        - **Biotech companies** (Series B-IPO) managing 3-20 trials
-        - **Pharma divisions** optimizing portfolio allocation
-        - **Investment firms** (VCs, hedge funds) for due diligence
-        - **CROs and consultants** differentiating their services
-        """)
-    
+
     with st.expander("How accurate are the predictions?"):
         st.markdown("""
-        Our models achieve **78%+ accuracy** in predicting trial outcomes, trained on:
-        - 2,000+ Phase 2-3 interventional trials
-        - 50+ predictive features per trial
-        - Historical data from ClinicalTrials.gov
-        - Validated using cross-validation and out-of-sample testing
+        Our LightGBM model achieves **87.4 % accuracy / 92.4 % F1 / 80.8 % ROC-AUC** on held-out data,
+        trained on 8,471 Phase 2–3 interventional trials from ClinicalTrials.gov.
+        Predictions are probabilistic; they do not guarantee individual trial outcomes.
         """)
-    
+
     with st.expander("Can you integrate with our existing systems?"):
+        st.markdown("Enterprise+ includes a REST API, Veeva/Medidata connectors, white-label deployment, and SSO.")
+
+    with st.expander("What support is included?"):
         st.markdown("""
-        Yes! Enterprise+ tier includes:
-        - REST API for programmatic access
-        - Custom integrations with Veeva, Medidata, etc.
-        - White-label deployment options
-        - SSO and security compliance
-        """)
-    
-    with st.expander("What's included in customer support?"):
-        st.markdown("""
-        - **Free tier:** Community forum access
-        - **Professional:** Email support (48-hour response)
+        - **Free:** Community forum
+        - **Professional:** Email support (48 h SLA)
         - **Enterprise:** Priority email + monthly check-ins
-        - **Enterprise+:** Dedicated customer success manager + 20 hours expert consultation
+        - **Enterprise+:** Dedicated CSM + 20 h expert consultation / year
         """)
-    
+
+    # ----------------------------------------------------------------
     # CTA
+    # ----------------------------------------------------------------
     st.markdown("---")
     st.markdown("""
-    <div style="background-color: #14B8A6; color: white; padding: 2rem; border-radius: 0.75rem; text-align: center;">
-        <h2 style="color: white; margin-top: 0;">Ready to reduce trial risk?</h2>
-        <p style="font-size: 1.2rem;">Schedule a personalized demo to see how we can optimize your clinical development portfolio.</p>
-        <a href="mailto:ryan@yourcompany.com?subject=Demo Request" style="background-color: white; color: #14B8A6; padding: 1rem 2rem; border-radius: 0.5rem; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 1rem;">Schedule Demo</a>
+    <div style="background:linear-gradient(90deg,#12dbb4,#14d8e2);color:white;
+                padding:2rem;border-radius:16px;text-align:center;">
+        <h2 style="color:white;margin-top:0;">Ready to reduce trial risk?</h2>
+        <p style="font-size:1.1rem;margin-bottom:1.5rem;">
+            Schedule a personalised demo and see how Encinitas can optimise your clinical portfolio.
+        </p>
+        <a href="mailto:sales@encinitas.ai?subject=Demo%20Request"
+           style="background:white;color:#12dbb4;padding:12px 28px;
+                  border-radius:8px;text-decoration:none;font-weight:700;
+                  font-size:1rem;display:inline-block;">
+            Schedule a Demo
+        </a>
     </div>
     """, unsafe_allow_html=True)
+    
+
+# ====================
+# LEGAL FOOTER rendered outside main() so it always appears last
+# ====================
+def _render_app():
+    main()
+    if LEGAL_AVAILABLE:
+        render_footer()
 
 
 if __name__ == '__main__':
-    main()
+    _render_app()
